@@ -1,5 +1,7 @@
 using Codium.Template.Domain.Repositories;
+using Codium.Template.Domain.Shared.AuditLogs;
 using Codium.Template.Domain.Shared.Repositories;
+using Codium.Template.EntityFrameworkCore.AuditLogs;
 using Codium.Template.EntityFrameworkCore.Contexts;
 using Codium.Template.EntityFrameworkCore.Extensions;
 using Codium.Template.EntityFrameworkCore.Repositories;
@@ -15,6 +17,8 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddEntityFrameworkCoreService(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<AuditLogOptions>(configuration.GetSection(AuditLogOptions.SectionName));
+        
         services.AddSingleton<NpgsqlDataSource>(opt =>
         {
             var dataSourceBuilder = new NpgsqlDataSourceBuilder(configuration.GetConnectionString("Default"));
@@ -32,6 +36,7 @@ public static class ServiceCollectionExtensions
                 builder.CommandTimeout(30);
             });
             opt.UseEntityMetadataTracking();
+            opt.UseAuditLog();
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
