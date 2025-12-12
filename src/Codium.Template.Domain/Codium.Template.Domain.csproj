@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Codium.Template.Domain.Shared\Codium.Template.Domain.Shared.csproj" />
+    </ItemGroup>
+
 </Project>

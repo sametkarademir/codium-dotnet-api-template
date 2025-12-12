@@ -1,6 +1,8 @@
+using Codium.Template.Domain.Repositories;
 using Codium.Template.Domain.Shared.Repositories;
 using Codium.Template.EntityFrameworkCore.Contexts;
 using Codium.Template.EntityFrameworkCore.Extensions;
+using Codium.Template.EntityFrameworkCore.Repositories;
 using Codium.Template.EntityFrameworkCore.Repositories.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -33,6 +35,12 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IEntityPropertyChangeRepository, EntityPropertyChangeRepository>();
+        services.AddScoped<IHttpRequestLogRepository, HttpRequestLogRepository>();
+        services.AddScoped<ISnapshotLogRepository, SnapshotLogRepository>();
+        services.AddScoped<ISnapshotAssemblyRepository, SnapshotAssemblyRepository>();
+        services.AddScoped<ISnapshotAppSettingRepository, SnapshotAppSettingRepository>();
 
         services.AddHostedService<DbMigrationInitializer>();
 
