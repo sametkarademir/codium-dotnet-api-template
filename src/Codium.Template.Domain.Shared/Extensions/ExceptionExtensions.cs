@@ -85,6 +85,7 @@ public static class ExceptionExtensions
     /// Converts the exception data to a JSON string.
     /// </summary>
     /// <param name="exception">The exception to convert.</param>
+    /// <param name="jsonSerializerOptions"></param>
     /// <returns>A JSON string representing the exception data.</returns>
     /// <remarks>
     /// This method iterates through the exception's data collection and serializes it to a JSON string.
@@ -99,17 +100,13 @@ public static class ExceptionExtensions
     /// Console.WriteLine(json);
     /// </code>
     /// </example>
-    public static string? ConvertExceptionDataToJson(this Exception exception)
+    public static string? ConvertExceptionDataToJson(this Exception exception, JsonSerializerOptions? jsonSerializerOptions = null)
     {
         try
         {
             var data = ConvertExceptionDataToDictionary(exception);
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
 
-            return JsonSerializer.Serialize(data, options);
+            return JsonSerializer.Serialize(data, jsonSerializerOptions);
         }
         catch (Exception)
         {
@@ -160,6 +157,7 @@ public static class ExceptionExtensions
     /// Converts the inner exceptions to the exception to a JSON string.
     /// </summary>
     /// <param name="exception">The exception to convert.</param>
+    /// <param name="jsonSerializerOptions"></param>
     /// <returns>A JSON string representing the inner exceptions.</returns>
     /// <remarks>
     /// This method iterates through the inner exceptions to the exception and serializes them to a JSON string.
@@ -173,17 +171,13 @@ public static class ExceptionExtensions
     /// Console.WriteLine(json);
     /// </code>
     /// </example>
-    public static string? ConvertInnerExceptionsToJson(this Exception exception)
+    public static string? ConvertInnerExceptionsToJson(this Exception exception, JsonSerializerOptions? jsonSerializerOptions = null)
     {
         try
         {
             var innerExceptionsList = ConvertInnerExceptionsToList(exception);
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
 
-            return JsonSerializer.Serialize(innerExceptionsList, options);
+            return JsonSerializer.Serialize(innerExceptionsList, jsonSerializerOptions);
         }
         catch (Exception)
         {

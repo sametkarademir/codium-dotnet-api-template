@@ -27,10 +27,11 @@ public static class ClaimsPrincipalExtensions
         
         return null;
     }
-    
+
     public static ClaimsIdentity AddUserId(this ClaimsIdentity identity, Guid userId)
     {
         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId.ToString()));
+
         return identity;
     }
 
@@ -51,6 +52,7 @@ public static class ClaimsPrincipalExtensions
     public static ClaimsIdentity AddUserName(this ClaimsIdentity identity, string userName)
     {
         identity.AddClaim(new Claim(ClaimTypes.Name, userName));
+
         return identity;
     }
 
@@ -71,6 +73,7 @@ public static class ClaimsPrincipalExtensions
     public static ClaimsIdentity AddUserEmail(this ClaimsIdentity identity, string email)
     {
         identity.AddClaim(new Claim(ClaimTypes.Name, email));
+
         return identity;
     }
 
@@ -86,6 +89,7 @@ public static class ClaimsPrincipalExtensions
     public static List<string> GetRoles(this ClaimsPrincipal user)
     {
         var userRolesClaim = user.FindAll(ClaimTypes.Role);
+        
         return userRolesClaim.Select(item => item.Value).ToList();
     }
     
@@ -95,6 +99,7 @@ public static class ClaimsPrincipalExtensions
         {
             identity.AddClaim(new Claim(ClaimTypes.Role, role));
         }
+
         return identity;
     }
 
@@ -109,6 +114,7 @@ public static class ClaimsPrincipalExtensions
     public static List<string> GetPermissions(this ClaimsPrincipal user)
     {
         var userPermissionsClaim = user.FindAll(CustomClaimTypes.Permission);
+
         return userPermissionsClaim.Select(item => item.Value).ToList();
     }
     
@@ -118,6 +124,7 @@ public static class ClaimsPrincipalExtensions
         {
             identity.AddClaim(new Claim(CustomClaimTypes.Permission, permission));
         }
+
         return identity;
     }
 
@@ -141,6 +148,7 @@ public static class ClaimsPrincipalExtensions
     public static ClaimsIdentity AddSessionId(this ClaimsIdentity identity, Guid sessionId)
     {
         identity.AddClaim(new Claim(CustomClaimTypes.SessionId, sessionId.ToString()));
+        
         return identity;
     }
     
@@ -194,7 +202,7 @@ public static class ClaimsPrincipalExtensions
     /// <returns>True if the user has at least one of the specified roles, otherwise false.</returns>
     public static bool HasAnyRole(this ClaimsPrincipal user, params string[] roles)
     {
-        return roles.Any(role => user.IsInRole(role));
+        return roles.Any(user.IsInRole);
     }
 
     /// <summary>
@@ -205,7 +213,7 @@ public static class ClaimsPrincipalExtensions
     /// <returns>True if the user has all of the specified roles, otherwise false.</returns>
     public static bool HasAllRoles(this ClaimsPrincipal user, params string[] roles)
     {
-        return roles.All(role => user.IsInRole(role));
+        return roles.All(user.IsInRole);
     }
 
     /// <summary>
@@ -217,6 +225,7 @@ public static class ClaimsPrincipalExtensions
     public static bool HasPermission(this ClaimsPrincipal user, string permission)
     {
         var permissions = user.GetPermissions();
+        
         return permissions.Contains(permission, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -229,6 +238,7 @@ public static class ClaimsPrincipalExtensions
     public static bool HasAnyPermission(this ClaimsPrincipal user, params string[] permissions)
     {
         var userPermissions = user.GetPermissions();
+        
         return permissions.Any(permission => userPermissions.Contains(permission, StringComparer.OrdinalIgnoreCase));
     }
 
@@ -241,6 +251,7 @@ public static class ClaimsPrincipalExtensions
     public static bool HasAllPermissions(this ClaimsPrincipal user, params string[] permissions)
     {
         var userPermissions = user.GetPermissions();
+       
         return permissions.All(permission => userPermissions.Contains(permission, StringComparer.OrdinalIgnoreCase));
     }
 

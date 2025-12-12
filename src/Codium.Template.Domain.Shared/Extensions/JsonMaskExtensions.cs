@@ -166,6 +166,7 @@ public static class JsonMaskExtensions
                 break;
 
             case JsonValueKind.Null:
+            default:
                 writer.WriteNullValue();
                 break;
         }

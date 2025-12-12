@@ -42,6 +42,7 @@ public static class QueryableExtensions
         }
 
         var sortString = string.Join(",", sortRequests.Select(x => $"{x.Field} {x.Order}"));
+        
         return queryable.OrderBy(sortString, cancellationToken);
     }
 

@@ -165,16 +165,6 @@ public static class HttpContextExtensions
         httpContext.SetRequestHeaderValue("X-Correlation-ID", correlationId.ToString());
         httpContext.SetResponseHeaderValue("X-Correlation-ID", correlationId.ToString());
     }
-    
-    public static void SetCorrelationId(this HttpResponse response, string? correlationId) 
-    {
-        if (string.IsNullOrEmpty(correlationId))
-        {
-            return;
-        }
-
-        response.Headers.Append("X-Correlation-ID", correlationId);
-    }
 
     /// <summary>
     /// Gets the session ID from the request headers
@@ -373,9 +363,11 @@ public static class HttpContextExtensions
         if (!string.IsNullOrEmpty(deviceInfo.DeviceFamily))
         {
             var deviceFamily = deviceInfo.DeviceFamily.ToLower();
-            if (deviceFamily.Contains("ipad") ||
+            if (
+                deviceFamily.Contains("ipad") ||
                 deviceFamily.Contains("tablet") ||
-                deviceFamily.Contains("kindle"))
+                deviceFamily.Contains("kindle")
+            )
             {
                 return true;
             }
@@ -384,9 +376,11 @@ public static class HttpContextExtensions
         if (!string.IsNullOrEmpty(deviceInfo.DeviceModel))
         {
             var deviceModel = deviceInfo.DeviceModel.ToLower();
-            if (deviceModel.Contains("ipad") ||
+            if (
+                deviceModel.Contains("ipad") ||
                 deviceModel.Contains("tablet") ||
-                deviceModel.Contains("kindle"))
+                deviceModel.Contains("kindle")
+            )
             {
                 return true;
             }
@@ -395,12 +389,16 @@ public static class HttpContextExtensions
         if (!string.IsNullOrEmpty(deviceInfo.BrowserFamily))
         {
             var browser = deviceInfo.BrowserFamily.ToLower();
-            if (browser.Contains("mobile safari") &&
+            if (
+                browser.Contains("mobile safari") &&
                 !string.IsNullOrEmpty(deviceInfo.OsFamily) &&
-                deviceInfo.OsFamily.ToLower().Contains("ios"))
+                deviceInfo.OsFamily.ToLower().Contains("ios")
+            )
             {
-                if (!string.IsNullOrEmpty(deviceInfo.DeviceModel) &&
-                    deviceInfo.DeviceModel.ToLower().Contains("ipad"))
+                if (
+                    !string.IsNullOrEmpty(deviceInfo.DeviceModel) &&
+                    deviceInfo.DeviceModel.ToLower().Contains("ipad")
+                )
                 {
                     return true;
                 }
@@ -415,10 +413,12 @@ public static class HttpContextExtensions
         if (!string.IsNullOrEmpty(deviceInfo.DeviceFamily))
         {
             var deviceFamily = deviceInfo.DeviceFamily.ToLower();
-            if (deviceFamily.Contains("iphone") ||
+            if (
+                deviceFamily.Contains("iphone") ||
                 deviceFamily.Contains("android") ||
                 deviceFamily.Contains("mobile") ||
-                deviceFamily.Contains("phone"))
+                deviceFamily.Contains("phone")
+            )
             {
                 return true;
             }
@@ -427,16 +427,22 @@ public static class HttpContextExtensions
         if (!string.IsNullOrEmpty(deviceInfo.OsFamily))
         {
             var osFamily = deviceInfo.OsFamily.ToLower();
-            if (osFamily.Contains("android") ||
+            if (
+                osFamily.Contains("android") ||
                 osFamily.Contains("windows phone") ||
-                osFamily.Contains("blackberry"))
+                osFamily.Contains("blackberry")
+            )
             {
                 return true;
             }
 
-            if (osFamily.Contains("ios") &&
-                (string.IsNullOrEmpty(deviceInfo.DeviceModel) ||
-                 !deviceInfo.DeviceModel.ToLower().Contains("ipad")))
+            if (
+                osFamily.Contains("ios") &&
+                (
+                    string.IsNullOrEmpty(deviceInfo.DeviceModel) ||
+                    !deviceInfo.DeviceModel.ToLower().Contains("ipad")
+                )
+            )
             {
                 return true;
             }
@@ -444,9 +450,8 @@ public static class HttpContextExtensions
 
         if (!string.IsNullOrEmpty(deviceInfo.BrowserFamily))
         {
-            string browser = deviceInfo.BrowserFamily.ToLower();
-            if (browser.Contains("mobile") &&
-                !browser.Contains("tablet"))
+            var browser = deviceInfo.BrowserFamily.ToLower();
+            if (browser.Contains("mobile") && !browser.Contains("tablet"))
             {
                 return true;
             }
@@ -517,6 +522,7 @@ public static class HttpContextExtensions
     public static string? GetControllerName(this HttpContext context)
     {
         var routeValues = GetRouteValue(context);
+        
         return routeValues.TryGetValue("controller", out var value) ? value?.ToString() : "unknown";
     }
 
@@ -533,6 +539,7 @@ public static class HttpContextExtensions
     public static string? GetActionName(this HttpContext context)
     {
         var routeValues = GetRouteValue(context);
+        
         return routeValues.TryGetValue("action", out var value) ? value?.ToString() : "unknown";
     }
 
@@ -669,6 +676,7 @@ public static class HttpContextExtensions
     public static async Task<string> GetRequestBodyToJsonAsync(this HttpContext context, JsonSerializerOptions? jsonSerializerOptions = null)
     {
         var body = await context.GetRequestBodyAsync();
+        
         return JsonSerializer.Serialize(body, jsonSerializerOptions);
     }
 
@@ -690,6 +698,7 @@ public static class HttpContextExtensions
     public static async Task<object?> GetFormValueAsync(this HttpContext context, string key)
     {
         var form = await context.Request.ReadFormAsync();
+        
         return form.TryGetValue(key, out var values) ? values.FirstOrDefault() : null;
     }
 
@@ -738,6 +747,7 @@ public static class HttpContextExtensions
     public static async Task<IFormFile?> GetFormFileAsync(this HttpContext context, string key)
     {
         var form = await context.Request.ReadFormAsync();
+        
         return form.Files.GetFile(key);
     }
 
@@ -759,6 +769,7 @@ public static class HttpContextExtensions
     public static async Task<List<IFormFile>> GetFormFilesAsync(this HttpContext context, string key)
     {
         var form = await context.Request.ReadFormAsync();
+        
         return form.Files.GetFiles(key).ToList();
     }
 
