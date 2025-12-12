@@ -165,16 +165,6 @@ public static class HttpContextExtensions
         httpContext.SetRequestHeaderValue("X-Correlation-ID", correlationId.ToString());
         httpContext.SetResponseHeaderValue("X-Correlation-ID", correlationId.ToString());
     }
-    
-    public static void SetCorrelationId(this HttpResponse response, string? correlationId) 
-    {
-        if (string.IsNullOrEmpty(correlationId))
-        {
-            return;
-        }
-
-        response.Headers.Append("X-Correlation-ID", correlationId);
-    }
 
     /// <summary>
     /// Gets the session ID from the request headers
@@ -517,6 +507,7 @@ public static class HttpContextExtensions
     public static string? GetControllerName(this HttpContext context)
     {
         var routeValues = GetRouteValue(context);
+        
         return routeValues.TryGetValue("controller", out var value) ? value?.ToString() : "unknown";
     }
 
@@ -533,6 +524,7 @@ public static class HttpContextExtensions
     public static string? GetActionName(this HttpContext context)
     {
         var routeValues = GetRouteValue(context);
+        
         return routeValues.TryGetValue("action", out var value) ? value?.ToString() : "unknown";
     }
 
@@ -669,6 +661,7 @@ public static class HttpContextExtensions
     public static async Task<string> GetRequestBodyToJsonAsync(this HttpContext context, JsonSerializerOptions? jsonSerializerOptions = null)
     {
         var body = await context.GetRequestBodyAsync();
+        
         return JsonSerializer.Serialize(body, jsonSerializerOptions);
     }
 
@@ -690,6 +683,7 @@ public static class HttpContextExtensions
     public static async Task<object?> GetFormValueAsync(this HttpContext context, string key)
     {
         var form = await context.Request.ReadFormAsync();
+        
         return form.TryGetValue(key, out var values) ? values.FirstOrDefault() : null;
     }
 
@@ -738,6 +732,7 @@ public static class HttpContextExtensions
     public static async Task<IFormFile?> GetFormFileAsync(this HttpContext context, string key)
     {
         var form = await context.Request.ReadFormAsync();
+        
         return form.Files.GetFile(key);
     }
 
@@ -759,6 +754,7 @@ public static class HttpContextExtensions
     public static async Task<List<IFormFile>> GetFormFilesAsync(this HttpContext context, string key)
     {
         var form = await context.Request.ReadFormAsync();
+        
         return form.Files.GetFiles(key).ToList();
     }
 

@@ -27,7 +27,7 @@ public interface IDeletionRepository<TEntity> where TEntity : class, IEntity
     );
 }
 
-public interface IDeletionRepository<TEntity, TKey> : IDeletionRepository<TEntity> where TEntity : class, IEntity<TKey>
+public interface IDeletionRepository<TEntity, in TKey> : IDeletionRepository<TEntity> where TEntity : class, IEntity<TKey>
 {
     /// <summary>
     /// Deletes an entity from the repository

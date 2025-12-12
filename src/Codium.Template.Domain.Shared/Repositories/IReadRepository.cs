@@ -7,7 +7,7 @@ namespace Codium.Template.Domain.Shared.Repositories;
 /// </summary>
 /// <typeparam name="TEntity">The entity type</typeparam>
 /// <typeparam name="TKey">The key type</typeparam>
-public interface IReadRepository<TEntity, TKey> :
+public interface IReadRepository<TEntity, in TKey> :
     IGetRepository<TEntity, TKey>,
     IGetListRepository<TEntity>,
     ICountRepository<TEntity>

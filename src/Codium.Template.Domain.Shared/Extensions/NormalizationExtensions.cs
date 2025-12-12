@@ -20,6 +20,7 @@ public static class NormalizationExtensions
         value = value.Normalize(NormalizationForm.FormD);
         var chars = value.Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark).ToArray();
         value = new string(chars).Normalize(NormalizationForm.FormC);
+        
         return value.ToUpperInvariant();
     }
 }

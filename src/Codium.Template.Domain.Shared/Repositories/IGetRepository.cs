@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Codium.Template.Domain.Shared.BaseEntities.Interfaces.Base;
-using Codium.Template.Domain.Shared.Exceptions.Types;
 using Microsoft.EntityFrameworkCore.Query;
 
 namespace Codium.Template.Domain.Shared.Repositories;
@@ -56,7 +55,7 @@ public interface IGetRepository<TEntity> : IQueryableRepository<TEntity>
     );
 }
 
-public interface IGetRepository<TEntity, TKey> : IGetRepository<TEntity>
+public interface IGetRepository<TEntity, in TKey> : IGetRepository<TEntity>
     where TEntity : class, IEntity<TKey>
 {
     /// <summary>
