@@ -165,6 +165,16 @@ public static class HttpContextExtensions
         httpContext.SetRequestHeaderValue("X-Correlation-ID", correlationId.ToString());
         httpContext.SetResponseHeaderValue("X-Correlation-ID", correlationId.ToString());
     }
+    
+    public static void SetCorrelationId(this HttpResponse response, string? correlationId) 
+    {
+        if (string.IsNullOrEmpty(correlationId))
+        {
+            return;
+        }
+
+        response.Headers.Append("X-Correlation-ID", correlationId);
+    }
 
     /// <summary>
     /// Gets the session ID from the request headers
