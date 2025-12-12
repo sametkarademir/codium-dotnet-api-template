@@ -5,18 +5,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Codium.Template.EntityFrameworkCore.Extensions;
 
-/// <summary>
-/// Intercepts Entity Framework save operations to apply audit metadata
-/// </summary>
 public class EntityAuditInterceptor : SaveChangesInterceptor
 {
-    /// <summary>
-    /// Intercepts the saving changes operation to apply audit metadata
-    /// </summary>
-    /// <param name="eventData">The event data containing the database context</param>
-    /// <param name="result">The interception result</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>The interception result</returns>
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -35,16 +25,8 @@ public class EntityAuditInterceptor : SaveChangesInterceptor
     }
 }
 
-/// <summary>
-/// Provides extension methods for DbContextOptionsBuilder to configure entity metadata tracking
-/// </summary>
 public static class DbContextOptionsBuilderExtensions
 {
-    /// <summary>
-    /// Configures the DbContext to use entity metadata tracking interceptor
-    /// </summary>
-    /// <param name="optionsBuilder">The options builder to configure</param>
-    /// <returns>The configured options builder</returns>
     public static DbContextOptionsBuilder UseEntityMetadataTracking(this DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.AddInterceptors(new EntityAuditInterceptor());

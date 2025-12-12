@@ -1,10 +1,6 @@
-using Codium.Template.Domain;
-using Codium.Template.Domain.Repositories;
 using Codium.Template.Domain.Shared.Repositories;
-using Codium.Template.EntityFrameworkCore.AuditLogs;
 using Codium.Template.EntityFrameworkCore.Contexts;
 using Codium.Template.EntityFrameworkCore.Extensions;
-using Codium.Template.EntityFrameworkCore.Repositories;
 using Codium.Template.EntityFrameworkCore.Repositories.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,8 +13,6 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddEntityFrameworkCoreService(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<AuditLogOptions>(configuration.GetSection(AuditLogOptions.SectionName));
-        
         services.AddSingleton<NpgsqlDataSource>(opt =>
         {
             var dataSourceBuilder = new NpgsqlDataSourceBuilder(configuration.GetConnectionString("Default"));
@@ -36,25 +30,10 @@ public static class ServiceCollectionExtensions
                 builder.CommandTimeout(30);
             });
             opt.UseEntityMetadataTracking();
-            opt.UseAuditLog();
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
-        services.AddScoped<IEntityPropertyChangeRepository, EntityPropertyChangeRepository>();
-        services.AddScoped<IHttpRequestLogRepository, HttpRequestLogRepository>();
-        services.AddScoped<ISnapshotLogRepository, SnapshotLogRepository>();
-        services.AddScoped<ISnapshotAssemblyRepository, SnapshotAssemblyRepository>();
-        services.AddScoped<ISnapshotAppSettingRepository, SnapshotAppSettingRepository>();
-        services.AddScoped<IPermissionRepository, PermissionRepository>();
-        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-        services.AddScoped<IRoleRepository, RoleRepository>();
-        services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
-        services.AddScoped<ISessionRepository, SessionRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IUserRoleRepository, UserRoleRepository>();
-        
-        services.AddScoped<DevelopmentDataSeederContributor>();
+
         services.AddHostedService<DbMigrationInitializer>();
 
         return services;

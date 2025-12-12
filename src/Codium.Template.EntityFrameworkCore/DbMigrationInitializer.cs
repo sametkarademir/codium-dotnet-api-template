@@ -1,4 +1,3 @@
-using Codium.Template.Domain;
 using Codium.Template.EntityFrameworkCore.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,9 +39,6 @@ public class DbMigrationInitializer(IServiceProvider serviceProvider) : IHostedS
         }
         
         logger.LogInformation("Database migrations succeeded.");
-        
-        var identitySeedService = scope.ServiceProvider.GetRequiredService<DevelopmentDataSeederContributor>();
-        await identitySeedService.SeedAsync();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

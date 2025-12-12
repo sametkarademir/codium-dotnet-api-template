@@ -10,12 +10,6 @@ using Microsoft.EntityFrameworkCore.Query;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories.Common;
 
-/// <summary>
-/// Base implementation of repository pattern for Entity Framework with typed key
-/// </summary>
-/// <typeparam name="TEntity">The entity type</typeparam>
-/// <typeparam name="TKey">The key type</typeparam>
-/// <typeparam name="TContext">The database context type</typeparam>
 public class EfRepositoryBase<TEntity, TKey, TContext>(TContext context) :
     IRepository<TEntity, TKey>
     where TEntity : class, IEntity<TKey>
@@ -267,11 +261,6 @@ public class EfRepositoryBase<TEntity, TKey, TContext>(TContext context) :
     }
 }
 
-/// <summary>
-/// Base implementation of repository pattern for Entity Framework without typed key
-/// </summary>
-/// <typeparam name="TEntity">The entity type</typeparam>
-/// <typeparam name="TContext">The database context type</typeparam>
 public class EfRepositoryBase<TEntity, TContext>(TContext context) :
     IRepository<TEntity>
     where TEntity : class, IEntity

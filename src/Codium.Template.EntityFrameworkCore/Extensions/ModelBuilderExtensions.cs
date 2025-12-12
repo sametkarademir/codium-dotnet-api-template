@@ -8,15 +8,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Codium.Template.EntityFrameworkCore.Extensions;
 
-/// <summary>
-/// Provides extension methods for ModelBuilder to apply global configurations
-/// </summary>
 public static class ModelBuilderExtensions
 {
-    /// <summary>
-    /// Applies global configurations to all entity types in the model
-    /// </summary>
-    /// <param name="builder">The model builder to configure</param>
     public static void ApplyGlobalConfigurations(this ModelBuilder builder)
     {
         foreach (var entityType in builder.Model.GetEntityTypes())
@@ -161,11 +154,6 @@ public static class ModelBuilderExtensions
         }
     }
 
-    /// <summary>
-    /// Applies global entity configurations to a specific entity type
-    /// </summary>
-    /// <typeparam name="T">The entity type to configure</typeparam>
-    /// <param name="builder">The entity type builder to configure</param>
     public static void ApplyGlobalEntityConfigurations<T>(this EntityTypeBuilder<T> builder) where T : class
     {
         var entityType = typeof(T);

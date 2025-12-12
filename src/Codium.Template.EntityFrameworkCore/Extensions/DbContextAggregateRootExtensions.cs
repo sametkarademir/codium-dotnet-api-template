@@ -7,16 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Codium.Template.EntityFrameworkCore.Extensions;
 
-/// <summary>
-/// Provides extension methods for DbContext to handle aggregate root operations
-/// </summary>
 public static class DbContextAggregateRootExtensions
 {
-    /// <summary>
-    /// Sets creation timestamps for entities that implement ICreationAuditedObject
-    /// </summary>
-    /// <param name="context">The database context</param>
-    /// <param name="httpContextAccessor">The HTTP context accessor to get user information</param>
     public static void SetCreationTimestamps(this DbContext context, IHttpContextAccessor httpContextAccessor)
     {
         var entries = context.ChangeTracker.Entries()
@@ -34,11 +26,6 @@ public static class DbContextAggregateRootExtensions
         }
     }
 
-    /// <summary>
-    /// Sets modification timestamps for entities that implement IAuditedObject or IHasConcurrencyStamp
-    /// </summary>
-    /// <param name="context">The database context</param>
-    /// <param name="httpContextAccessor">The HTTP context accessor to get user information</param>
     public static void SetModificationTimestamps(this DbContext context, IHttpContextAccessor httpContextAccessor)
     {
         var entries = context.ChangeTracker.Entries()
@@ -59,11 +46,6 @@ public static class DbContextAggregateRootExtensions
         }
     }
 
-    /// <summary>
-    /// Sets soft delete timestamps for entities that implement IDeletionAuditedObject
-    /// </summary>
-    /// <param name="context">The database context</param>
-    /// <param name="httpContextAccessor">The HTTP context accessor to get user information</param>
     public static void SetSoftDelete(this DbContext context, IHttpContextAccessor httpContextAccessor)
     {
         var entries = context.ChangeTracker
