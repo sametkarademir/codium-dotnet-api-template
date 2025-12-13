@@ -1,3 +1,4 @@
+using Codium.Template.Domain;
 using Codium.Template.Domain.Repositories;
 using Codium.Template.Domain.Shared.AuditLogs;
 using Codium.Template.Domain.Shared.Repositories;
@@ -46,7 +47,16 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISnapshotLogRepository, SnapshotLogRepository>();
         services.AddScoped<ISnapshotAssemblyRepository, SnapshotAssemblyRepository>();
         services.AddScoped<ISnapshotAppSettingRepository, SnapshotAppSettingRepository>();
+        services.AddScoped<IConfirmationCodeRepository, ConfirmationCodeRepository>();
+        services.AddScoped<IPermissionRepository, PermissionRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+        services.AddScoped<ISessionRepository, SessionRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 
+        services.AddScoped<DevelopmentDataSeederContributor>();
         services.AddHostedService<DbMigrationInitializer>();
 
         return services;
