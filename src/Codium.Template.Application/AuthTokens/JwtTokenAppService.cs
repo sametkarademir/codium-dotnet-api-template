@@ -10,14 +10,9 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Codium.Template.Application.AuthTokens;
 
-public class JwtTokenAppService : IJwtTokenAppService
+public class JwtTokenAppService(IOptions<IdentityUserOptions> identityUserOptions) : IJwtTokenAppService
 {
-    private readonly IdentityUserOptions _identityUserOptions;
-
-    public JwtTokenAppService(IOptions<IdentityUserOptions> identityUserOptions)
-    {
-        _identityUserOptions = identityUserOptions.Value;
-    }
+    private readonly IdentityUserOptions _identityUserOptions = identityUserOptions.Value;
 
     public GenerateJwtTokenResponseDto GenerateJwt(GenerateJwtTokenRequestDto request)
     {
