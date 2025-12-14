@@ -9,10 +9,10 @@ using Codium.Template.Domain.RolePermissions;
 using Codium.Template.Domain.Roles;
 using Codium.Template.Domain.Sessions;
 using Codium.Template.Domain.SnapshotAppSettings;
+using Codium.Template.Domain.SnapshotAssemblies;
 using Codium.Template.Domain.SnapshotLogs;
 using Codium.Template.Domain.UserRoles;
 using Codium.Template.Domain.Users;
-using Codium.Template.EntityFrameworkCore.EntityConfigurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Codium.Template.EntityFrameworkCore.Contexts;
@@ -23,7 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<EntityPropertyChange> EntityPropertyChanges { get; set; }
     public DbSet<HttpRequestLog> HttpRequestLogs { get; set; }
     public DbSet<SnapshotLog> SnapshotLogs { get; set; }
-    public DbSet<SnapshotAssemblyConfiguration> SnapshotAssemblyConfigurations { get; set; }
+    public DbSet<SnapshotAssembly> SnapshotAssemblies { get; set; }
     public DbSet<SnapshotAppSetting> SnapshotAppSettings { get; set; }
     public DbSet<ConfirmationCode> ConfirmationCodes { get; set; }
     public DbSet<Permission> Permissions { get; set; }
