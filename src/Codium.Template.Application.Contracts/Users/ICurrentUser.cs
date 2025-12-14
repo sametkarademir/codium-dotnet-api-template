@@ -13,5 +13,5 @@ public interface ICurrentUser
     bool HasPermission(string permission);
     Guid? SessionId { get; }
 
-    ClaimsPrincipal User();
+    ClaimsPrincipal? User();
 }

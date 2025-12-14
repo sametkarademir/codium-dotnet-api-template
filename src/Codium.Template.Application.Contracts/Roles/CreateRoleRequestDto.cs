@@ -15,10 +15,10 @@ public class CreateRoleRequestDtoValidator : AbstractValidator<CreateRoleRequest
     public CreateRoleRequestDtoValidator(IStringLocalizer<ApplicationResource> localizer)
     {
         RuleFor(item => item.Name)
-            .NotEmpty().WithMessage(localizer["Role:Name:NotEmpty"])
-            .MaximumLength(256).WithMessage(localizer["Role:Name:MaxLength", 256]);
+            .NotEmpty().WithMessage(localizer["CreateRoleRequestDto:Name:NotEmpty"])
+            .MaximumLength(256).WithMessage(localizer["CreateRoleRequestDto:Name:MaxLength", 256]);
         
         RuleFor(item => item.Description)
-            .MaximumLength(2048).WithMessage(localizer["Role:Description:MaxLength", 2048]);
+            .MaximumLength(2048).WithMessage(localizer["CreateRoleRequestDto:Description:MaxLength", 2048]);
     }
 }

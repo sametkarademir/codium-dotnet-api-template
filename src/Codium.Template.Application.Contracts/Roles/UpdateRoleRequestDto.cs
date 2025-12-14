@@ -1,4 +1,3 @@
-using Codium.Template.Application.Contracts.BaseEntities;
 using Codium.Template.Domain.Shared.Localization;
 using FluentValidation;
 using Microsoft.Extensions.Localization;
@@ -16,10 +15,10 @@ public class UpdateRoleRequestDtoValidator : AbstractValidator<UpdateRoleRequest
     public UpdateRoleRequestDtoValidator(IStringLocalizer<ApplicationResource> localizer)
     {
         RuleFor(item => item.Name)
-            .NotEmpty().WithMessage(localizer["Role:Name:NotEmpty"])
-            .MaximumLength(256).WithMessage(localizer["Role:Name:MaxLength", 256]);
+            .NotEmpty().WithMessage(localizer["UpdateRoleRequestDto:Name:NotEmpty"])
+            .MaximumLength(256).WithMessage(localizer["UpdateRoleRequestDto:Name:MaxLength", 256]);
         
         RuleFor(item => item.Description)
-            .MaximumLength(2048).WithMessage(localizer["Role:Description:MaxLength", 2048]);
+            .MaximumLength(2048).WithMessage(localizer["UpdateRoleRequestDto:Description:MaxLength", 2048]);
     }
 }

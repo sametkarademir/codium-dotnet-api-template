@@ -8,7 +8,6 @@ namespace Codium.Template.Application.Contracts.Users;
 
 public class CreateUserRequestDto
 {
-    public string UserName { get; set; } = null!;
     public string Email { get; set; } = null!;
 
     public bool EmailConfirmed { get; set; }
@@ -29,37 +28,33 @@ public class CreateUserRequestDtoValidator : AbstractValidator<CreateUserRequest
 {
     public CreateUserRequestDtoValidator(IStringLocalizer<ApplicationResource> localizer, IOptions<IdentityUserOptions> options)
     {
-        RuleFor(item => item.UserName)
-            .NotEmpty().WithMessage(localizer["User:UserName:IsRequired"])
-            .MaximumLength(256).WithMessage(localizer["User:UserName:MaxLength", 256]);
-        
         RuleFor(item => item.Email)
-            .NotEmpty().WithMessage(localizer["User:Email:IsRequired"])
-            .MaximumLength(256).WithMessage(localizer["User:Email:MaxLength", 256])
-            .EmailAddress().WithMessage(localizer["User:Email:InvalidFormat"])
+            .NotEmpty().WithMessage(localizer["CreateUserRequestDto:Email:IsRequired"])
+            .MaximumLength(256).WithMessage(localizer["CreateUserRequestDto:Email:MaxLength", 256])
+            .EmailAddress().WithMessage(localizer["CreateUserRequestDto:Email:InvalidFormat"])
             .When(item => !string.IsNullOrWhiteSpace(item.Email));
         
         RuleFor(item => item.PhoneNumber) 
-            .MaximumLength(16).WithMessage(localizer["User:PhoneNumber:MaxLength", 16])
-            .Matches(@"^\+?[1-9]\d{1,14}$").WithMessage(localizer["User:PhoneNumber:InvalidFormat"])
+            .MaximumLength(16).WithMessage(localizer["CreateUserRequestDto:PhoneNumber:MaxLength", 16])
+            .Matches(@"^\+?[1-9]\d{1,14}$").WithMessage(localizer["CreateUserRequestDto:PhoneNumber:InvalidFormat"])
             .When(item => !string.IsNullOrWhiteSpace(item.PhoneNumber));
 
         RuleFor(item => item.Password)
-            .NotEmpty().WithMessage(localizer["User:Password:IsRequired"])
+            .NotEmpty().WithMessage(localizer["CreateUserRequestDto:Password:IsRequired"])
             .MinimumLength(options.Value.Password.RequiredLength)
-            .WithMessage(localizer["User:Password:MinLength", options.Value.Password.RequiredLength])
+            .WithMessage(localizer["CreateUserRequestDto:Password:MinLength", options.Value.Password.RequiredLength])
             .MaximumLength(options.Value.Password.MaxLength)
-            .WithMessage(localizer["User:Password:MaxLength", options.Value.Password.MaxLength]);
+            .WithMessage(localizer["CreateUserRequestDto:Password:MaxLength", options.Value.Password.MaxLength]);
         
         RuleFor(item => item.ConfirmPassword)
-            .Equal(item => item.Password).WithMessage(localizer["User:ConfirmPassword:MustMatchPassword"]);
+            .Equal(item => item.Password).WithMessage(localizer["CreateUserRequestDto:ConfirmPassword:MustMatchPassword"]);
         
         RuleFor(item => item.FirstName) 
-            .MaximumLength(128).WithMessage(localizer["User:FirstName:MaxLength", 128])
+            .MaximumLength(128).WithMessage(localizer["CreateUserRequestDto:FirstName:MaxLength", 128])
             .When(item => !string.IsNullOrWhiteSpace(item.FirstName));
         
         RuleFor(item => item.LastName) 
-            .MaximumLength(128).WithMessage(localizer["User:LastName:MaxLength", 128])
+            .MaximumLength(128).WithMessage(localizer["CreateUserRequestDto:LastName:MaxLength", 128])
             .When(item => !string.IsNullOrWhiteSpace(item.LastName));
     }
 }

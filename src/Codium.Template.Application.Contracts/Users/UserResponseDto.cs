@@ -5,7 +5,6 @@ namespace Codium.Template.Application.Contracts.Users;
 
 public class UserResponseDto : EntityDto<Guid>
 {
-    public string UserName { get; set; } = null!;
     public string Email { get; set; } = null!;
     public bool EmailConfirmed { get; set; }
     public string? PhoneNumber { get; set; }

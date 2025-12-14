@@ -12,6 +12,18 @@ public abstract class GetListRequestDto
     public string? Search { get; set; }
     public string? Field { get; set; }
     public SortOrderTypes Order { get; set; } = SortOrderTypes.Asc;
+
+    public List<SortRequest> ToSortRequests()
+    {
+        return
+        [
+            new SortRequest
+            {
+                Field = Field,
+                Order = Order
+            }
+        ];
+    }
 }
 
 public class GetListRequestDtoValidator : AbstractValidator<GetListRequestDto>

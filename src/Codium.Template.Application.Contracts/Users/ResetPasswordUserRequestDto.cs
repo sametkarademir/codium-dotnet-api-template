@@ -17,11 +17,11 @@ public class ResetPasswordUserRequestDtoValidator : AbstractValidator<ResetPassw
     public ResetPasswordUserRequestDtoValidator(IStringLocalizer<ApplicationResource> localizer, IOptions<IdentityUserOptions> options)
     {
         RuleFor(item => item.NewPassword)
-            .NotEmpty().WithMessage(localizer["User:Password:IsRequired"])
-            .MinimumLength(options.Value.Password.RequiredLength).WithMessage(localizer["User:Password:MinLength", options.Value.Password.RequiredLength])
-            .MaximumLength(options.Value.Password.MaxLength).WithMessage(localizer["User:Password:MaxLength", options.Value.Password.MaxLength]);
+            .NotEmpty().WithMessage(localizer["ResetPasswordUserRequestDto:Password:IsRequired"])
+            .MinimumLength(options.Value.Password.RequiredLength).WithMessage(localizer["ResetPasswordUserRequestDto:Password:MinLength", options.Value.Password.RequiredLength])
+            .MaximumLength(options.Value.Password.MaxLength).WithMessage(localizer["ResetPasswordUserRequestDto:Password:MaxLength", options.Value.Password.MaxLength]);
         
         RuleFor(item => item.ConfirmNewPassword)
-            .Equal(item => item.NewPassword).WithMessage(localizer["User:ConfirmPassword:MustMatchPassword"]);
+            .Equal(item => item.NewPassword).WithMessage(localizer["ResetPasswordUserRequestDto:ConfirmPassword:MustMatchPassword"]);
     }
 }
