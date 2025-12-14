@@ -6,7 +6,7 @@ public interface ICurrentUser
 {
     bool IsAuthenticated { get; }
     Guid? Id { get; }
-    string? UserName { get; }
+    string? Email { get; }
     List<string>? Roles { get; }
     bool HasRole(string role);
     List<string>? Permissions { get; }

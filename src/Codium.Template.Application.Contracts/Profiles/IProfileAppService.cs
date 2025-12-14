@@ -9,5 +9,4 @@ public interface IProfileAppService
     
     Task<PagedResult<SessionResponseDto>> GetPageableAndFilterAsync(GetListSessionsRequestDto request, CancellationToken cancellationToken = default);
     Task InvalidateSessionAsync(Guid sessionId, CancellationToken cancellationToken = default);
-    Task InvalidateAllSessionsAsync(CancellationToken cancellationToken = default);
 }

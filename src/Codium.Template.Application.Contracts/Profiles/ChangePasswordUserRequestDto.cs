@@ -18,16 +18,16 @@ public class ChangePasswordUserRequestDtoValidator : AbstractValidator<ChangePas
     public ChangePasswordUserRequestDtoValidator(IStringLocalizer<ApplicationResource> localizer, IOptions<IdentityUserOptions> options)
     {
         RuleFor(item => item.OldPassword)
-            .NotEmpty().WithMessage(localizer["User:Password:IsRequired"])
-            .MinimumLength(options.Value.Password.RequiredLength).WithMessage(localizer["User:Password:MinLength", options.Value.Password.RequiredLength])
-            .MaximumLength(options.Value.Password.MaxLength).WithMessage(localizer["User:Password:MaxLength", options.Value.Password.MaxLength]);
+            .NotEmpty().WithMessage(localizer["ChangePasswordUserRequestDto:Password:IsRequired"])
+            .MinimumLength(options.Value.Password.RequiredLength).WithMessage(localizer["ChangePasswordUserRequestDto:Password:MinLength", options.Value.Password.RequiredLength])
+            .MaximumLength(options.Value.Password.MaxLength).WithMessage(localizer["ChangePasswordUserRequestDto:Password:MaxLength", options.Value.Password.MaxLength]);
 
         RuleFor(item => item.NewPassword)
-            .NotEmpty().WithMessage(localizer["User:Password:IsRequired"])
-            .MinimumLength(options.Value.Password.RequiredLength).WithMessage(localizer["User:Password:MinLength", options.Value.Password.RequiredLength])
-            .MaximumLength(options.Value.Password.MaxLength).WithMessage(localizer["User:Password:MaxLength", options.Value.Password.MaxLength]);
+            .NotEmpty().WithMessage(localizer["ChangePasswordUserRequestDto:Password:IsRequired"])
+            .MinimumLength(options.Value.Password.RequiredLength).WithMessage(localizer["ChangePasswordUserRequestDto:Password:MinLength", options.Value.Password.RequiredLength])
+            .MaximumLength(options.Value.Password.MaxLength).WithMessage(localizer["ChangePasswordUserRequestDto:Password:MaxLength", options.Value.Password.MaxLength]);
         
         RuleFor(item => item.ConfirmNewPassword)
-            .Equal(item => item.NewPassword).WithMessage(localizer["User:PasswordConfirm:MustMatchPassword"]);
+            .Equal(item => item.NewPassword).WithMessage(localizer["ChangePasswordUserRequestDto:PasswordConfirm:MustMatchPassword"]);
     }
 }

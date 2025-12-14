@@ -11,7 +11,7 @@ public abstract class GetListRequestDto
     public int PerPage { get; set; } = 10;
     public string? Search { get; set; }
     public string? Field { get; set; }
-    public SortOrderTypes? Order { get; set; }
+    public SortOrderTypes Order { get; set; } = SortOrderTypes.Asc;
 }
 
 public class GetListRequestDtoValidator : AbstractValidator<GetListRequestDto>
@@ -30,9 +30,8 @@ public class GetListRequestDtoValidator : AbstractValidator<GetListRequestDto>
         
         RuleFor(item => item.Field)
             .MaximumLength(256).WithMessage(localizer["GetList:Field:MaxLength", 256]);
-        
+
         RuleFor(item => item.Order)
-            .IsInEnum().WithMessage(localizer["GetList:Order:IsInEnum"])
-            .When(item => item.Order.HasValue);
+            .IsInEnum().WithMessage(localizer["GetList:Order:IsInEnum"]);
     }
 }
