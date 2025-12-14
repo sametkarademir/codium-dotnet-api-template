@@ -1,0 +1,6 @@
+﻿services:
+  codium.template.httpapi.host:
+    image: codium.template.httpapi.host
+    build:
+      context: .
+      dockerfile: src/Codium.Template.HttpApi.Host/Dockerfile
