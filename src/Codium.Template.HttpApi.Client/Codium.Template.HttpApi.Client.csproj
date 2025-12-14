@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Codium.Template.Application.Contracts\Codium.Template.Application.Contracts.csproj" />
+    </ItemGroup>
+
 </Project>
