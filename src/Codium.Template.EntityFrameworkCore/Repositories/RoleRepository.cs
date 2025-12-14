@@ -5,10 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class RoleRepository : EfRepositoryBase<Role, Guid, ApplicationDbContext>, IRoleRepository 
-{
-    public RoleRepository(ApplicationDbContext context) : base(context)
-    {
-        
-    }
-}
+public class RoleRepository(ApplicationDbContext context)
+    : EfRepositoryBase<Role, Guid, ApplicationDbContext>(context), IRoleRepository;

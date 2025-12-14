@@ -5,10 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class EntityPropertyChangeRepository : EfRepositoryBase<EntityPropertyChange, Guid, ApplicationDbContext>, IEntityPropertyChangeRepository
-{
-
-    public EntityPropertyChangeRepository(ApplicationDbContext dbContext) : base(dbContext)
-    {
-    }
-}
+public class EntityPropertyChangeRepository(ApplicationDbContext dbContext)
+    : EfRepositoryBase<EntityPropertyChange, Guid, ApplicationDbContext>(dbContext), IEntityPropertyChangeRepository;

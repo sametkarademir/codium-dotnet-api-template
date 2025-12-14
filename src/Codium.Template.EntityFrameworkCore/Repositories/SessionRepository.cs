@@ -5,9 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class SessionRepository : EfRepositoryBase<Session, Guid, ApplicationDbContext>, ISessionRepository 
-{
-    public SessionRepository(ApplicationDbContext context) : base(context)
-    {
-    }
-}
+public class SessionRepository(ApplicationDbContext context)
+    : EfRepositoryBase<Session, Guid, ApplicationDbContext>(context), ISessionRepository;

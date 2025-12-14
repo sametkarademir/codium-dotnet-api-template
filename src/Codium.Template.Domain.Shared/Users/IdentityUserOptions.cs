@@ -44,4 +44,6 @@ public class SignInOptions
     public int MaxActiveSessionsPerUser { get; set; } = 5;
     public bool RequireConfirmedEmail { get; set; } = false;
     public bool RequireConfirmedPhoneNumber { get; set; } = false;
+    public int EmailConfirmationCodeExpiryMinutes { get; set; } = 5;
+    public int ResetPasswordCodeExpiryMinutes { get; set; } = 5;
 }

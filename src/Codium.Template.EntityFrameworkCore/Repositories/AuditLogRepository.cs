@@ -5,9 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class AuditLogRepository : EfRepositoryBase<AuditLog, Guid, ApplicationDbContext>, IAuditLogRepository 
-{
-    public AuditLogRepository(ApplicationDbContext dbContext) : base(dbContext)
-    {
-    }
-}
+public class AuditLogRepository(ApplicationDbContext dbContext)
+    : EfRepositoryBase<AuditLog, Guid, ApplicationDbContext>(dbContext), IAuditLogRepository;

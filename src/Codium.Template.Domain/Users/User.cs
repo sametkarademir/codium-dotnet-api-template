@@ -8,11 +8,8 @@ namespace Codium.Template.Domain.Users;
 
 public class User : FullAuditedEntity<Guid>
 {
-    public string UserName { get; set; } = null!;
-    public string NormalizedUserName { get; set; } = null!;
-
-    public string? Email { get; set; }
-    public string? NormalizedEmail { get; set; }
+    public string Email { get; set; } = null!;
+    public string NormalizedEmail { get; set; } = null!;
     public bool EmailConfirmed { get; set; }
 
     public string PasswordHash { get; set; } = null!;

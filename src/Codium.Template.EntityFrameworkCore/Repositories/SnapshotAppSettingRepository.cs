@@ -5,9 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class SnapshotAppSettingRepository : EfRepositoryBase<SnapshotAppSetting, Guid, ApplicationDbContext>, ISnapshotAppSettingRepository
-{
-    public SnapshotAppSettingRepository(ApplicationDbContext dbContext) : base(dbContext)
-    {
-    }
-}
+public class SnapshotAppSettingRepository(ApplicationDbContext dbContext)
+    : EfRepositoryBase<SnapshotAppSetting, Guid, ApplicationDbContext>(dbContext), ISnapshotAppSettingRepository;

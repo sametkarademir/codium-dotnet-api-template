@@ -6,22 +6,8 @@ using System.Text.Unicode;
 
 namespace Codium.Template.Domain.Shared.Extensions;
 
-/// <summary>
-/// Provides extension methods for masking sensitive data in JSON strings.
-/// </summary>
 public static class JsonMaskExtensions
 {
-    /// <summary>
-    /// Masks sensitive data in a JSON string based on the provided options.
-    /// </summary>
-    /// <param name="data">The JSON string to mask.</param>
-    /// <param name="maskPattern">The pattern used to mask sensitive data. Default is "***MASKED***".</param>
-    /// <param name="sensitivePropertyNames">An array of property names that should be masked. Default includes common sensitive properties.</param>
-    /// <param name="jsonSerializerOptions">Optional JsonSerializerOptions for JSON parsing.</param>
-    /// <returns>The masked JSON string.</returns>
-    /// <remarks>
-    /// This method attempts to parse the input string as JSON. If parsing fails, it falls back to regex-based masking.
-    /// </remarks>
     public static string? MaskSensitiveData(
         string? data, 
         string maskPattern = "***MASKED***",

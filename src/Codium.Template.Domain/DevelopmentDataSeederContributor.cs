@@ -12,66 +12,45 @@ using Microsoft.Extensions.Logging;
 
 namespace Codium.Template.Domain;
 
-public class DevelopmentDataSeederContributor
+public class DevelopmentDataSeederContributor(
+    IUserRepository userRepository,
+    IRoleRepository roleRepository,
+    IUserRoleRepository userRoleRepository,
+    IPermissionRepository permissionRepository,
+    IRolePermissionRepository rolePermissionRepository,
+    IUnitOfWork unitOfWork,
+    IPasswordHasher<User> passwordHasher,
+    ILogger<DevelopmentDataSeederContributor> logger)
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IRoleRepository _roleRepository;
-    private readonly IUserRoleRepository _userRoleRepository;
-    private readonly IPermissionRepository _permissionRepository;
-    private readonly IRolePermissionRepository _rolePermissionRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IPasswordHasher<User> _passwordHasher;
-    private readonly ILogger<DevelopmentDataSeederContributor> _logger;
-
-    public DevelopmentDataSeederContributor(
-        IUserRepository userRepository,
-        IRoleRepository roleRepository,
-        IUserRoleRepository userRoleRepository,
-        IPermissionRepository permissionRepository,
-        IRolePermissionRepository rolePermissionRepository,
-        IUnitOfWork unitOfWork,
-        IPasswordHasher<User> passwordHasher,
-        ILogger<DevelopmentDataSeederContributor> logger)
-    {
-        _userRepository = userRepository;
-        _roleRepository = roleRepository;
-        _userRoleRepository = userRoleRepository;
-        _permissionRepository = permissionRepository;
-        _rolePermissionRepository = rolePermissionRepository;
-        _unitOfWork = unitOfWork;
-        _passwordHasher = passwordHasher;
-        _logger = logger;
-    }
-
     public async Task SeedAsync()
     {
         try
         {
-            _logger.LogInformation("Starting seeding...");
+            logger.LogInformation("Starting seeding...");
 
             // Add your seeding logic here
             await CreateAllPermissionsAsync();
             await CreateAdminUserAsync();
 
-            _logger.LogInformation("Seeding completed.");
+            logger.LogInformation("Seeding completed.");
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error occurred during seeding");
+            logger.LogError(e, "Error occurred during seeding");
         }
     }
 
     private async Task CreateAllPermissionsAsync()
     {
-        var permissionCount = await _permissionRepository.CountAsync();
+        var permissionCount = await permissionRepository.CountAsync();
         if (permissionCount > 0)
         {
             return;
         }
 
         var permissions = GetAllPermissionsFromConsts();
-        await _permissionRepository.AddRangeAsync(permissions);
-        await _unitOfWork.SaveChangesAsync();
+        await permissionRepository.AddRangeAsync(permissions);
+        await unitOfWork.SaveChangesAsync();
     }
 
     private List<Permission> GetAllPermissionsFromConsts()
@@ -105,17 +84,17 @@ public class DevelopmentDataSeederContributor
 
     private async Task CreateAdminUserAsync()
     {
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        await using var transaction = await unitOfWork.BeginTransactionAsync();
         try
         {
             const string adminRoleName = "Admin";
             var normalizedAdminRoleName = adminRoleName.NormalizeValue();
 
-            const string userName = "admin@codium.com";
-            var normalizedUserName = userName.NormalizeValue();
+            const string email = "admin@codium.com";
+            var normalizedEmail = email.NormalizeValue();
 
-            var matchedAdminUser = await _userRepository.SingleOrDefaultAsync(
-                predicate: u => u.UserName == userName,
+            var matchedAdminUser = await userRepository.SingleOrDefaultAsync(
+                predicate: u => u.Email == email,
                 enableTracking: false
             );
 
@@ -124,30 +103,35 @@ public class DevelopmentDataSeederContributor
                 return;
             }
 
-            var newRole = new Role
+            var existingAdminRole = await roleRepository.SingleOrDefaultAsync(
+                predicate: r => r.NormalizedName == normalizedAdminRoleName,
+                enableTracking: false
+            );
+            if (existingAdminRole == null)
             {
-                Id = Guid.NewGuid(),
-                Name = adminRoleName,
-                NormalizedName = normalizedAdminRoleName
-            };
-            await _roleRepository.AddAsync(newRole);
+                existingAdminRole = new Role
+                {
+                    Id = Guid.NewGuid(),
+                    Name = adminRoleName,
+                    NormalizedName = normalizedAdminRoleName
+                };
+                await roleRepository.AddAsync(existingAdminRole);
+            }
 
-            var allPermissions = await _permissionRepository.GetAllAsync(enableTracking: false);
+            var allPermissions = await permissionRepository.GetAllAsync(enableTracking: false);
             var newRolePermissions = allPermissions.Select(p => new RolePermission
             {
-                RoleId = newRole.Id,
+                RoleId = existingAdminRole.Id,
                 PermissionId = p.Id
             }).ToList();
 
-            await _rolePermissionRepository.AddRangeAsync(newRolePermissions);
+            await rolePermissionRepository.AddRangeAsync(newRolePermissions);
 
             var newUser = new User
             {
                 Id = Guid.NewGuid(),
-                UserName = userName,
-                NormalizedUserName = normalizedUserName,
-                Email = userName,
-                NormalizedEmail = normalizedUserName,
+                Email = email,
+                NormalizedEmail = normalizedEmail,
                 EmailConfirmed = true,
                 PhoneNumber = null,
                 PhoneNumberConfirmed = true,
@@ -160,23 +144,23 @@ public class DevelopmentDataSeederContributor
                 PasswordChangedTime = null,
                 IsActive = true
             };
-            newUser.PasswordHash = _passwordHasher.HashPassword(newUser, "Pp123456*");
-            await _userRepository.AddAsync(newUser);
+            newUser.PasswordHash = passwordHasher.HashPassword(newUser, "Pp123456*");
+            await userRepository.AddAsync(newUser);
 
             var newUserRole = new UserRole
             {
-                RoleId = newRole.Id,
+                RoleId = existingAdminRole.Id,
                 UserId = newUser.Id
             };
-            await _userRoleRepository.AddAsync(newUserRole);
+            await userRoleRepository.AddAsync(newUserRole);
 
             await transaction.CommitAsync();
-            await _unitOfWork.SaveChangesAsync();
+            await unitOfWork.SaveChangesAsync();
         }
         catch (Exception e)
         {
             await transaction.RollbackAsync();
-            _logger.LogError(e, "Error occurred while creating admin user");
+            logger.LogError(e, "Error occurred while creating admin user");
 
             throw;
         }

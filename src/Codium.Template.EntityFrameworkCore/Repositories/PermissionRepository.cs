@@ -5,10 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class PermissionRepository : EfRepositoryBase<Permission, Guid, ApplicationDbContext>, IPermissionRepository 
-{
-    public PermissionRepository(ApplicationDbContext dbContext) : base(dbContext)
-    {
-        
-    }
-}
+public class PermissionRepository(ApplicationDbContext dbContext)
+    : EfRepositoryBase<Permission, Guid, ApplicationDbContext>(dbContext), IPermissionRepository;

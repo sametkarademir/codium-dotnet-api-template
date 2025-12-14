@@ -5,10 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class RolePermissionRepository : EfRepositoryBase<RolePermission, Guid, ApplicationDbContext>, IRolePermissionRepository 
-{
-    public RolePermissionRepository(ApplicationDbContext context) : base(context)
-    {
-        
-    }
-}
+public class RolePermissionRepository(ApplicationDbContext context)
+    : EfRepositoryBase<RolePermission, Guid, ApplicationDbContext>(context), IRolePermissionRepository;

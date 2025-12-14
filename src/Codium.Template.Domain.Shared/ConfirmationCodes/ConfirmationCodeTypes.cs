@@ -2,7 +2,8 @@ namespace Codium.Template.Domain.Shared.ConfirmationCodes;
 
 public enum ConfirmationCodeTypes
 {
-    EmailConfirmation = 1,
-    PhoneConfirmation = 2,
-    TwoFactorAuthentication = 3
+    EmailConfirmation = 0,
+    PhoneConfirmation = 1,
+    TwoFactorAuthentication = 2,
+    ResetPassword = 3
 }

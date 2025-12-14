@@ -2,17 +2,10 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories.Common;
 
-public class NoOpTransaction : IDbContextTransaction
+public class NoOpTransaction(IDbContextTransaction innerTransaction) : IDbContextTransaction
 {
-    private readonly IDbContextTransaction _innerTransaction;
-
-    public NoOpTransaction(IDbContextTransaction innerTransaction)
-    {
-        _innerTransaction = innerTransaction ?? throw new ArgumentNullException(nameof(innerTransaction));
-    }
-
-    public Guid TransactionId => _innerTransaction.TransactionId;
-    public bool SupportsSavepoints => _innerTransaction.SupportsSavepoints;
+    public Guid TransactionId => innerTransaction.TransactionId;
+    public bool SupportsSavepoints => innerTransaction.SupportsSavepoints;
 
     public void Commit() 
     { 
@@ -43,16 +36,16 @@ public class NoOpTransaction : IDbContextTransaction
 
     public Task CreateSavepointAsync(string name, CancellationToken cancellationToken = default)
     {
-        return _innerTransaction.CreateSavepointAsync(name, cancellationToken);
+        return innerTransaction.CreateSavepointAsync(name, cancellationToken);
     }
 
     public Task ReleaseSavepointAsync(string name, CancellationToken cancellationToken = default)
     {
-        return _innerTransaction.ReleaseSavepointAsync(name, cancellationToken);
+        return innerTransaction.ReleaseSavepointAsync(name, cancellationToken);
     }
 
     public Task RollbackToSavepointAsync(string name, CancellationToken cancellationToken = default)
     {
-        return _innerTransaction.RollbackToSavepointAsync(name, cancellationToken);
+        return innerTransaction.RollbackToSavepointAsync(name, cancellationToken);
     }
 }

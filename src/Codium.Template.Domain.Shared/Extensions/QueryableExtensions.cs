@@ -5,19 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Codium.Template.Domain.Shared.Extensions;
 
-/// <summary>
-/// Provides extension methods for IQueryable to support sorting and pagination
-/// </summary>
 public static class QueryableExtensions
 {
-    /// <summary>
-    /// Applies sorting to a queryable based on a collection of sort requests
-    /// </summary>
-    /// <typeparam name="T">The type of entity</typeparam>
-    /// <param name="queryable">The queryable to apply sorting to</param>
-    /// <param name="sorts">The collection of sort requests</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>The queryable with sorting applied</returns>
     public static IQueryable<T> ApplySort<T>(
         this IQueryable<T> queryable,
         IEnumerable<SortRequest>? sorts,
@@ -35,26 +24,17 @@ public static class QueryableExtensions
             return queryable;
         }
 
-        sortRequests = sortRequests.Where(x => !string.IsNullOrWhiteSpace(x.Field)).ToList();
+        sortRequests = sortRequests.Where(item => !string.IsNullOrWhiteSpace(item.Field)).ToList();
         if (sortRequests.Count == 0)
         {
             return queryable;
         }
 
-        var sortString = string.Join(",", sortRequests.Select(x => $"{x.Field} {x.Order}"));
+        var sortString = string.Join(",", sortRequests.Select(item => $"{item.Field} {item.Order}"));
         
         return queryable.OrderBy(sortString, cancellationToken);
     }
 
-    /// <summary>
-    /// Applies sorting to a queryable based on a single field and order
-    /// </summary>
-    /// <typeparam name="T">The type of entity</typeparam>
-    /// <param name="queryable">The queryable to apply sorting to</param>
-    /// <param name="field">The field name to sort by</param>
-    /// <param name="orderType">The sort order type</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>The queryable with sorting applied</returns>
     public static IQueryable<T> ApplySort<T>(
         this IQueryable<T> queryable,
         string? field = null,
@@ -67,15 +47,6 @@ public static class QueryableExtensions
             : queryable.OrderBy($"{field} {orderType.ToString()}", cancellationToken);
     }
 
-    /// <summary>
-    /// Converts a queryable to a pageable response with data and metadata
-    /// </summary>
-    /// <typeparam name="T">The type of entity</typeparam>
-    /// <param name="queryable">The queryable to paginate</param>
-    /// <param name="page">The page number (1-based)</param>
-    /// <param name="perPage">The number of items per page</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>A pageable response containing the data and metadata</returns>
     public static async Task<PagedList<T>> ToPageableAsync<T>(
         this IQueryable<T> queryable,
         int page,

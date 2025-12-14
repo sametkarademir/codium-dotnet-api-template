@@ -5,10 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class ConfirmationCodeRepository : EfRepositoryBase<ConfirmationCode, Guid, ApplicationDbContext>, IConfirmationCodeRepository 
-{
-    public ConfirmationCodeRepository(ApplicationDbContext dbContext) : base(dbContext)
-    {
-        
-    }
-}
+public class ConfirmationCodeRepository(ApplicationDbContext dbContext)
+    : EfRepositoryBase<ConfirmationCode, Guid, ApplicationDbContext>(dbContext), IConfirmationCodeRepository;

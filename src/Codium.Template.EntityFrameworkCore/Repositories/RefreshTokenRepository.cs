@@ -5,10 +5,5 @@ using Codium.Template.EntityFrameworkCore.Repositories.Common;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class RefreshTokenRepository : EfRepositoryBase<RefreshToken, Guid, ApplicationDbContext>, IRefreshTokenRepository 
-{
-    public RefreshTokenRepository(ApplicationDbContext context) : base(context)
-    {
-        
-    }
-}
+public class RefreshTokenRepository(ApplicationDbContext context)
+    : EfRepositoryBase<RefreshToken, Guid, ApplicationDbContext>(context), IRefreshTokenRepository;

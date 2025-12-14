@@ -23,18 +23,6 @@ public static class ClaimsPrincipalExtensions
         return identity;
     }
 
-    public static string? GetUserName(this ClaimsPrincipal user)
-    {
-        return user.FindFirst(ClaimTypes.Name)?.Value;
-    }
-    
-    public static ClaimsIdentity AddUserName(this ClaimsIdentity identity, string userName)
-    {
-        identity.AddClaim(new Claim(ClaimTypes.Name, userName));
-        
-        return identity;
-    }
-
     public static string? GetUserEmail(this ClaimsPrincipal user)
     {
         return user.FindFirst(ClaimTypes.Email)?.Value;
@@ -42,7 +30,7 @@ public static class ClaimsPrincipalExtensions
     
     public static ClaimsIdentity AddUserEmail(this ClaimsIdentity identity, string email)
     {
-        identity.AddClaim(new Claim(ClaimTypes.Name, email));
+        identity.AddClaim(new Claim(ClaimTypes.Email, email));
 
         return identity;
     }
@@ -102,14 +90,14 @@ public static class ClaimsPrincipalExtensions
     public static ClaimsIdentity AddUserClaims(
         this ClaimsIdentity identity, 
         Guid userId, 
-        string userName, 
+        string email, 
         Guid sessionId,
         IEnumerable<string> roles,
         IEnumerable<string> permissions)
     {
         return identity
             .AddUserId(userId)
-            .AddUserName(userName)
+            .AddUserEmail(email)
             .AddSessionId(sessionId)
             .AddRoles(roles)
             .AddPermissions(permissions);

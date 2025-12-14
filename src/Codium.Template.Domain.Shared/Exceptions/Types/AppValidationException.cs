@@ -26,8 +26,8 @@ public class AppValidationException : AppException
 
     private static string BuildErrorMessage(IEnumerable<ValidationExceptionModel> errors)
     {
-        var arr = errors.Select(x =>
-            $"{Environment.NewLine} -- {x.Property}: {string.Join(Environment.NewLine, values: x.Errors ?? Array.Empty<string>())}"
+        var arr = errors.Select(item =>
+            $"{Environment.NewLine} -- {item.Property}: {string.Join(Environment.NewLine, values: item.Errors ?? Array.Empty<string>())}"
         );
 
         return string.Join(string.Empty, arr);

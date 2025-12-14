@@ -21,7 +21,7 @@ public class ConfirmationCodeConfiguration : IEntityTypeConfiguration<Confirmati
         builder.Property(item => item.Type).IsRequired();
         builder.Property(item => item.ExpiryTime).IsRequired();
         builder.Property(item => item.IsUsed).IsRequired();
-        builder.Property(item => item.UsedAt).IsRequired(false);
+        builder.Property(item => item.UsedTime).IsRequired(false);
 
         builder.HasOne(item => item.User)
             .WithMany(item => item.ConfirmationCodes)

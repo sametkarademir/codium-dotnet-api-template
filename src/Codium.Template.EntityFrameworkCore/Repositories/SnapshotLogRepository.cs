@@ -6,12 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Codium.Template.EntityFrameworkCore.Repositories;
 
-public class SnapshotLogRepository : EfRepositoryBase<SnapshotLog, Guid, ApplicationDbContext>, ISnapshotLogRepository
+public class SnapshotLogRepository(ApplicationDbContext dbContext)
+    : EfRepositoryBase<SnapshotLog, Guid, ApplicationDbContext>(dbContext), ISnapshotLogRepository
 {
-    public SnapshotLogRepository(ApplicationDbContext dbContext) : base(dbContext)
-    {
-    }
-
     public async Task<SnapshotLog?> GetLatestSnapshotLogAsync()
     {
         return await AsQueryable()
