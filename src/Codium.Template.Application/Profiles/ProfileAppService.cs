@@ -1,4 +1,7 @@
 using AutoMapper;
+using Codium.Template.Application.BackgroundJobs.InvalidateAllSessions;
+using Codium.Template.Application.Contracts.BackgroundJobs;
+using Codium.Template.Application.Contracts.BackgroundJobs.InvalidateAllSessions;
 using Codium.Template.Application.Contracts.Common.Results;
 using Codium.Template.Application.Contracts.Profiles;
 using Codium.Template.Application.Contracts.Users;
@@ -9,6 +12,7 @@ using Codium.Template.Domain.Shared.Localization;
 using Codium.Template.Domain.Shared.Repositories;
 using Codium.Template.Domain.Shared.Users;
 using Codium.Template.Domain.Users;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -26,7 +30,9 @@ public class ProfileAppService(
     IOptions<IdentityUserOptions> options,
     ICurrentUser currentUser,
     IStringLocalizer<ApplicationResource> localizer,
-    IMapper mapper)
+    IMapper mapper,
+    IHttpContextAccessor httpContextAccessor,
+    IBackgroundJobExecutor backgroundJobExecutor)
     : IProfileAppService
 {
     private readonly IdentityUserOptions _identityUserOptions = options.Value;
@@ -89,12 +95,19 @@ public class ProfileAppService(
         }
         
         matchedUser.PasswordHash = passwordHasher.HashPassword(matchedUser, request.NewPassword);
-        matchedUser.LastModificationTime = DateTime.UtcNow;
-        
-        await InvalidateAllSessionsAsync(cancellationToken);
+        matchedUser.PasswordChangedTime = DateTime.UtcNow;
         
         await userRepository.UpdateAsync(matchedUser, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        backgroundJobExecutor.Enqueue<InvalidateAllSessionsBackgroundJob, InvalidateAllSessionsBackgroundJobArgs>(
+            new InvalidateAllSessionsBackgroundJobArgs
+            {
+                UserId = matchedUser.Id,
+                CorrelationId = httpContextAccessor.HttpContext?.GetCorrelationId() ?? Guid.NewGuid(),
+                Reason = "Password changed by user"
+            }
+        );
     }
 
     public async Task<PagedResult<SessionResponseDto>> GetPageableAndFilterAsync(GetListSessionsRequestDto request, CancellationToken cancellationToken = default)
@@ -135,13 +148,13 @@ public class ProfileAppService(
             enableTracking: true,
             cancellationToken: cancellationToken
         );
-        
+
         matchedSession.IsRevoked = true;
         matchedSession.RevokedTime = DateTime.UtcNow;
-        
+
         await sessionRepository.UpdateAsync(matchedSession, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        
+
         var matchedRefreshTokens = await refreshTokenRepository.GetAllAsync(
             predicate: rt => 
                 rt.SessionId == matchedSession.Id &&
@@ -151,12 +164,12 @@ public class ProfileAppService(
             enableTracking: true,
             cancellationToken: cancellationToken
         );
-        
+
         if (matchedRefreshTokens.Count == 0)
         {
             return;
         }
-        
+
         var updatedRefreshTokens = matchedRefreshTokens.Select(rt =>
         {
             rt.IsRevoked = true;
@@ -164,64 +177,7 @@ public class ProfileAppService(
 
             return rt;
         }).ToList();
-        
-        await refreshTokenRepository.UpdateRangeAsync(updatedRefreshTokens, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
 
-    private async Task InvalidateAllSessionsAsync(CancellationToken cancellationToken = default)
-    {
-        if (!currentUser.IsAuthenticated)
-        {
-            throw new AppUnauthorizedException();
-        }
-
-        var matchedSessions = await sessionRepository.GetAllAsync(
-            predicate: s => 
-                s.UserId == currentUser.Id &&
-                s.IsRevoked == false,
-            enableTracking: true,
-            cancellationToken: cancellationToken
-        );
-
-        if (matchedSessions.Count == 0)
-        {
-            return;
-        }
-
-        var updatedSessions = matchedSessions.Select(s =>
-        {
-            s.IsRevoked = true;
-            s.RevokedTime = DateTime.UtcNow;
-
-            return s;
-        }).ToList();
-
-        await sessionRepository.UpdateRangeAsync(updatedSessions, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        var matchedRefreshTokens = await refreshTokenRepository.GetAllAsync(
-            predicate: rt => 
-                rt.UserId == currentUser.Id &&
-                rt.IsRevoked == false &&
-                rt.IsUsed == false,
-            enableTracking: true,
-            cancellationToken: cancellationToken
-        );
-        
-        if (matchedRefreshTokens.Count == 0)
-        {
-            return;
-        }
-        
-        var updatedRefreshTokens = matchedRefreshTokens.Select(rt =>
-        {
-            rt.IsRevoked = true;
-            rt.RevokedTime = DateTime.UtcNow;
-
-            return rt;
-        }).ToList();
-        
         await refreshTokenRepository.UpdateRangeAsync(updatedRefreshTokens, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

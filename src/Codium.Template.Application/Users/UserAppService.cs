@@ -1,4 +1,7 @@
 using AutoMapper;
+using Codium.Template.Application.BackgroundJobs.InvalidateAllSessions;
+using Codium.Template.Application.Contracts.BackgroundJobs;
+using Codium.Template.Application.Contracts.BackgroundJobs.InvalidateAllSessions;
 using Codium.Template.Application.Contracts.Common.Results;
 using Codium.Template.Application.Contracts.Roles;
 using Codium.Template.Application.Contracts.Users;
@@ -9,6 +12,7 @@ using Codium.Template.Domain.Shared.Repositories;
 using Codium.Template.Domain.Shared.Users;
 using Codium.Template.Domain.UserRoles;
 using Codium.Template.Domain.Users;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -25,7 +29,9 @@ public class UserAppService(
     IPasswordHasher<User> passwordHasher,
     IOptions<IdentityUserOptions> options,
     IStringLocalizer<UserAppService> localizer,
-    IMapper mapper)
+    IHttpContextAccessor httpContextAccessor,
+    IMapper mapper,
+    IBackgroundJobExecutor backgroundJobExecutor)
     : IUserAppService
 {
     private readonly IdentityUserOptions _identityUserOptions = options.Value;
@@ -396,11 +402,18 @@ public class UserAppService(
         }
         
         matchedUser.PasswordHash = passwordHasher.HashPassword(matchedUser, request.NewPassword);
-        matchedUser.LastModificationTime = DateTime.UtcNow;
-        
-        //TODO: Invalidate all user sessions after password change
+        matchedUser.PasswordChangedTime = DateTime.UtcNow;
         
         await userRepository.UpdateAsync(matchedUser, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        backgroundJobExecutor.Enqueue<InvalidateAllSessionsBackgroundJob, InvalidateAllSessionsBackgroundJobArgs>(
+            new InvalidateAllSessionsBackgroundJobArgs
+            {
+                UserId = matchedUser.Id,
+                CorrelationId = httpContextAccessor.HttpContext?.GetCorrelationId() ?? Guid.NewGuid(),
+                Reason = "Password reset by admin"
+            },
+            cancellationToken);
     }
 }

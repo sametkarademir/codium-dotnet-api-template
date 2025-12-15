@@ -1,5 +1,10 @@
+using Codium.Template.Application.BackgroundJobs.InvalidateAllSessions;
+using Codium.Template.Application.BackgroundJobs.SendEmail;
 using Codium.Template.Application.Contracts.Auth;
 using Codium.Template.Application.Contracts.AuthTokens;
+using Codium.Template.Application.Contracts.BackgroundJobs;
+using Codium.Template.Application.Contracts.BackgroundJobs.InvalidateAllSessions;
+using Codium.Template.Application.Contracts.BackgroundJobs.SendEmail;
 using Codium.Template.Application.Contracts.Users;
 using Codium.Template.Domain.ConfirmationCodes;
 using Codium.Template.Domain.RefreshTokens;
@@ -33,6 +38,7 @@ public class AuthAppService(
     IJwtTokenAppService jwtTokenAppService,
     IOptions<IdentityUserOptions> options,
     IPasswordHasher<User> passwordHasher,
+    IBackgroundJobExecutor backgroundJobExecutor,
     IHttpContextAccessor httpContextAccessor,
     IStringLocalizer<ApplicationResource> localizer
 ) : IAuthAppService
@@ -351,7 +357,7 @@ public class AuthAppService(
             {
                 return;
             }
-        
+
             var matchedConfirmationCodes = await confirmationCodeRepository.GetAllAsync(
                 predicate: cc =>
                     cc.UserId == matchedUser.Id &&
@@ -360,15 +366,18 @@ public class AuthAppService(
                     cc.ExpiryTime > DateTime.UtcNow,
                 cancellationToken: cancellationToken
             );
-        
-            var revokedCodes = matchedConfirmationCodes.Select(item =>
-            {
-                item.IsUsed = true;
-                item.UsedTime = DateTime.UtcNow;
 
-                return item;
-            }).ToList();
-            await confirmationCodeRepository.UpdateRangeAsync(revokedCodes, cancellationToken);
+            if (matchedConfirmationCodes.Count != 0)
+            {
+                var revokedCodes = matchedConfirmationCodes.Select(item =>
+                {
+                    item.IsUsed = true;
+                    item.UsedTime = DateTime.UtcNow;
+
+                    return item;
+                }).ToList();
+                await confirmationCodeRepository.UpdateRangeAsync(revokedCodes, cancellationToken);
+            }
         
             var newConfirmationCode = new ConfirmationCode
             {
@@ -385,9 +394,15 @@ public class AuthAppService(
             await transaction.CommitAsync(cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
         
-            // TODO: Send confirmation email with the new confirmation code
+            backgroundJobExecutor.Enqueue<SendEmailBackgroundJob, SendEmailBackgroundJobArgs>(new SendEmailBackgroundJobArgs
+            {
+                To = matchedUser.Email,
+                Subject = "Email Confirmation",
+                Body = $"Your email confirmation code is: {newConfirmationCode.Code}",
+                CorrelationId = httpContextAccessor.HttpContext?.GetCorrelationId() ?? Guid.NewGuid(),
+            });
         }
-        catch (Exception e)
+        catch (Exception)
         {
             await transaction.RollbackAsync(cancellationToken);
 
@@ -458,16 +473,19 @@ public class AuthAppService(
                     cc.ExpiryTime > DateTime.UtcNow,
                 cancellationToken: cancellationToken
             );
-            
-            var revokedCodes = matchedConfirmationCodes.Select(item =>
-            {
-                item.IsUsed = true;
-                item.UsedTime = DateTime.UtcNow;
 
-                return item;
-            }).ToList();
+            if (matchedConfirmationCodes.Count != 0)
+            {
+                var revokedCodes = matchedConfirmationCodes.Select(item =>
+                {
+                    item.IsUsed = true;
+                    item.UsedTime = DateTime.UtcNow;
+
+                    return item;
+                }).ToList();
             
-            await confirmationCodeRepository.UpdateRangeAsync(revokedCodes, cancellationToken);
+                await confirmationCodeRepository.UpdateRangeAsync(revokedCodes, cancellationToken);
+            }
             
             var newConfirmationCode = new ConfirmationCode
             {
@@ -479,15 +497,21 @@ public class AuthAppService(
                 UsedTime = null,
                 UserId = matchedUser.Id,
             };
-            
+
             await confirmationCodeRepository.AddAsync(newConfirmationCode, cancellationToken);
-            
+
             await transaction.CommitAsync(cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             
-            // TODO: Send confirmation email with the new confirmation code
+            backgroundJobExecutor.Enqueue<SendEmailBackgroundJob, SendEmailBackgroundJobArgs>(new SendEmailBackgroundJobArgs
+            {
+                To = matchedUser.Email,
+                Subject = "Password Reset",
+                Body = $"Your password reset code is: {newConfirmationCode.Code}",
+                CorrelationId = httpContextAccessor.HttpContext?.GetCorrelationId() ?? Guid.NewGuid(),
+            });
         }
-        catch (Exception e)
+        catch (Exception)
         {
             await transaction.RollbackAsync(cancellationToken);
 
@@ -532,10 +556,20 @@ public class AuthAppService(
             await confirmationCodeRepository.UpdateAsync(matchedConfirmationCode, cancellationToken);
 
             matchedUser.PasswordHash = passwordHasher.HashPassword(matchedUser, request.NewPassword);
+            matchedUser.PasswordChangedTime = DateTime.UtcNow;
             await userRepository.UpdateAsync(matchedUser, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            backgroundJobExecutor.Enqueue<InvalidateAllSessionsBackgroundJob, InvalidateAllSessionsBackgroundJobArgs>(
+                new InvalidateAllSessionsBackgroundJobArgs
+                {
+                    UserId = matchedUser.Id,
+                    CorrelationId = httpContextAccessor.HttpContext?.GetCorrelationId() ?? Guid.NewGuid(),
+                    Reason = "Password reset via forgot password"
+                }
+            );
         }
         catch (Exception)
         {
