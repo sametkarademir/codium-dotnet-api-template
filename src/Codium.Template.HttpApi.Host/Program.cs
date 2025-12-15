@@ -4,6 +4,7 @@ using Codium.Template.Application;
 using Codium.Template.EntityFrameworkCore;
 using Codium.Template.HttpApi.Attributes;
 using Codium.Template.HttpApi.Client;
+using Codium.Template.HttpApi.Host.Configuration;
 using Codium.Template.HttpApi.Host.Logging;
 using Codium.Template.HttpApi.Host.Middlewares;
 using Hangfire;
@@ -25,15 +26,9 @@ builder.Services.AddControllers(options =>
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
+
+builder.Services.AddCorsConfiguration(builder.Configuration);
+builder.Services.AddRateLimitingConfiguration(builder.Configuration);
 
 builder.Services.AddOpenApi();
 
@@ -45,19 +40,14 @@ builder.AddSerilogLogging(builder.Configuration);
 
 var app = builder.Build();
 
-app.UseRegisteredMiddlewares();
+app.UseCustomMiddlewares();
+
+app.MapControllers();
 
 app.MapOpenApi();
 app.MapScalarApiReference();
 
-app.UseCors();
-app.UseRequestLocalization();
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-
-app.UseHangfireDashboard(builder.Configuration["Hangfire:Url"], new DashboardOptions
+app.UseHangfireDashboard(builder.Configuration["Hangfire:Url"]!, new DashboardOptions
 {
     Authorization =
     [

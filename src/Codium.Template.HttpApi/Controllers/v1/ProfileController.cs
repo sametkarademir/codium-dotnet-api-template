@@ -3,12 +3,14 @@ using Codium.Template.Application.Contracts.Profiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Codium.Template.HttpApi.Controllers.v1;
 
 [ApiController]
 [Route("api/v1/profile")]
 [Authorize]
+[EnableRateLimiting("api")]
 public class ProfileController : ControllerBase
 {
     private readonly IProfileAppService _profileAppService;

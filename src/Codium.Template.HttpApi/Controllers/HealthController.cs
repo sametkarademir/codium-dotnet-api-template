@@ -2,11 +2,13 @@ using System.Diagnostics;
 using Codium.Template.Application.Contracts.Healths;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Codium.Template.HttpApi.Controllers;
 
 [ApiController]
 [Route("health")]
+[DisableRateLimiting]
 public class HealthController : ControllerBase
 {
     private static readonly DateTime StartupTime = DateTime.UtcNow;

@@ -5,12 +5,14 @@ using Codium.Template.HttpApi.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Codium.Template.HttpApi.Controllers.v1;
 
 [ApiController]
 [Route("api/v1/roles")]
 [Authorize]
+[EnableRateLimiting("api")]
 public class RoleController : ControllerBase
 {
     private readonly IRoleAppService _roleAppService;
