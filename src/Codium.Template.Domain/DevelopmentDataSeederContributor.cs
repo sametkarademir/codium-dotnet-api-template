@@ -74,6 +74,7 @@ public class DevelopmentDataSeederContributor(
                     permissions.Add(new Permission
                     {
                         Name = value,
+                        NormalizedName = value.NormalizeValue()
                     });
                 }
             }
