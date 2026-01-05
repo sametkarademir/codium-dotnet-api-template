@@ -63,3 +63,5 @@ app.UseHangfireDashboard(builder.Configuration["Hangfire:Url"]!, new DashboardOp
 });
 
 app.Run();
+
+public partial class Program { }

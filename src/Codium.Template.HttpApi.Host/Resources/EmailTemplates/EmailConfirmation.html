@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Confirmation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .email-header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .email-body {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 16px;
+            color: #666666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .code-container {
+            background-color: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .code-label {
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .confirmation-code {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .expiry-note {
+            font-size: 13px;
+            color: #999999;
+            margin-top: 15px;
+        }
+        .info-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .info-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #856404;
+        }
+        .email-footer {
+            background-color: #f8f9fa;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .email-footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #6c757d;
+        }
+        .email-footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                margin: 20px;
+            }
+            .email-header {
+                padding: 30px 20px;
+            }
+            .email-header h1 {
+                font-size: 24px;
+            }
+            .email-body {
+                padding: 30px 20px;
+            }
+            .confirmation-code {
+                font-size: 28px;
+                letter-spacing: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>✉️ Email Confirmation</h1>
+        </div>
+        
+        <div class="email-body">
+            <p class="greeting">Hello {{UserName}},</p>
+            
+            <p class="message">
+                Thank you for registering with <strong>{{AppName}}</strong>! To complete your registration and verify your email address, 
+                please use the confirmation code below:
+            </p>
+            
+            <div class="code-container">
+                <div class="code-label">Your Confirmation Code</div>
+                <div class="confirmation-code">{{ConfirmationCode}}</div>
+                <div class="expiry-note">⏱️ This code will expire in {{ExpiryMinutes}} minutes</div>
+            </div>
+            
+            <div class="info-box">
+                <p>
+                    <strong>⚠️ Security Note:</strong> If you didn't request this email, please ignore it. 
+                    Your account is safe and no action is required.
+                </p>
+            </div>
+            
+            <p class="message">
+                If you have any questions or need assistance, please don't hesitate to contact our support team.
+            </p>
+        </div>
+        
+        <div class="email-footer">
+            <p><strong>{{AppName}}</strong></p>
+            <p>This is an automated message, please do not reply to this email.</p>
+            <p>&copy; {{Year}} {{AppName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+

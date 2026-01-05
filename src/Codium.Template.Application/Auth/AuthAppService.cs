@@ -27,6 +27,7 @@ public class AuthAppService : IAuthAppService
 {
     private readonly IUserRepository _userRepository;
     private readonly IUserRoleRepository _userRoleRepository;
+    private readonly IRoleRepository _roleRepository;
     private readonly ISessionRepository _sessionRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IConfirmationCodeRepository _confirmationCodeRepository;
@@ -42,6 +43,7 @@ public class AuthAppService : IAuthAppService
     public AuthAppService(
         IUserRepository userRepository,
         IUserRoleRepository userRoleRepository,
+        IRoleRepository roleRepository,
         ISessionRepository sessionRepository, 
         IRefreshTokenRepository refreshTokenRepository,
         IConfirmationCodeRepository confirmationCodeRepository,
@@ -55,6 +57,7 @@ public class AuthAppService : IAuthAppService
     {
         _userRepository = userRepository;
         _userRoleRepository = userRoleRepository;
+        _roleRepository = roleRepository;
         _sessionRepository = sessionRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _confirmationCodeRepository = confirmationCodeRepository;
@@ -70,47 +73,47 @@ public class AuthAppService : IAuthAppService
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken = default)
     {
+        var matchedUser = await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
+        if (matchedUser == null)
+        {
+            throw new AppUnauthorizedException(_localizer["AuthAppService:LoginAsync:InvalidCredentials"]);
+        }
+
+        var signInResult = await CheckPasswordSignInAsync(
+            matchedUser,
+            request.Password,
+            true,
+            cancellationToken
+        );
+
+        if (signInResult.IsLockedOut)
+        {
+            throw new AppForbiddenException(_localizer["AuthAppService:LoginAsync:LockedOut"]);
+        }
+
+        if (!signInResult.Succeeded)
+        {
+            throw new AppUnauthorizedException(_localizer["AuthAppService:LoginAsync:InvalidCredentials"]);
+        }
+        
+        if (!matchedUser.IsActive)
+        {
+            throw new AppForbiddenException(_localizer["AuthAppService:LoginAsync:UserInactive"]);
+        }
+        
+        if (!matchedUser.EmailConfirmed && UserConsts.RequireConfirmedEmail)
+        {
+            throw new AppForbiddenException(_localizer["AuthAppService:LoginAsync:EmailNotConfirmed"]);
+        }
+        
+        if (!matchedUser.PhoneNumberConfirmed && UserConsts.RequireConfirmedPhoneNumber) 
+        {
+            throw new AppForbiddenException(_localizer["AuthAppService:LoginAsync:PhoneNumberNotConfirmed"]);
+        }
+
         await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
-            var matchedUser = await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
-            if (matchedUser == null)
-            {
-                throw new AppUnauthorizedException(_localizer["AuthAppService:LoginAsync:InvalidCredentials"]);
-            }
-
-            var signInResult = await CheckPasswordSignInAsync(
-                matchedUser,
-                request.Password,
-                true,
-                cancellationToken
-            );
-
-            if (signInResult.IsLockedOut)
-            {
-                throw new AppForbiddenException(_localizer["AuthAppService:LoginAsync:LockedOut"]);
-            }
-
-            if (!signInResult.Succeeded)
-            {
-                throw new AppUnauthorizedException(_localizer["AuthAppService:LoginAsync:InvalidCredentials"]);
-            }
-            
-            if (!matchedUser.IsActive)
-            {
-                throw new AppForbiddenException(_localizer["AuthAppService:LoginAsync:UserInactive"]);
-            }
-            
-            if (!matchedUser.EmailConfirmed && UserConsts.RequireConfirmedEmail)
-            {
-                throw new AppForbiddenException(_localizer["AuthAppService:LoginAsync:EmailNotConfirmed"]);
-            }
-            
-            if (!matchedUser.PhoneNumberConfirmed && UserConsts.RequireConfirmedPhoneNumber) 
-            {
-                throw new AppForbiddenException(_localizer["AuthAppService:LoginAsync:PhoneNumberNotConfirmed"]);
-            }
-
             var newUserSessionId = await CreateSessionAsync(matchedUser.Id, cancellationToken);
 
             var rolesAndPermissions = await _userRoleRepository.GetRolesAndPermissionsByUserIdAsync(matchedUser.Id, cancellationToken);
@@ -260,43 +263,56 @@ public class AuthAppService : IAuthAppService
 
     public async Task RegisterAsync(RegisterRequestDto request, CancellationToken cancellationToken = default)
     {
-        var existingUser = await _userRepository.ExistsByEmailAsync(request.Email, cancellationToken: cancellationToken);
-        if (existingUser)
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
         {
-            throw new AppConflictException(_localizer["AuthAppService:RegisterAsync:UserExists", request.Email]);
+            var existingUser = await _userRepository.ExistsByEmailAsync(request.Email, cancellationToken: cancellationToken);
+            if (existingUser)
+            {
+                throw new AppConflictException(_localizer["AuthAppService:RegisterAsync:UserExists", request.Email]);
+            }
+            
+            var passwordValidatorResult = _passwordValidator.Validate(request.Password);
+            if (!passwordValidatorResult.Succeeded)
+            {
+                throw new AppValidationException(passwordValidatorResult.Errors);
+            }
+            
+            var newUser = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = request.Email,
+                NormalizedEmail = request.Email.NormalizeValue(),
+                EmailConfirmed = false,
+                PhoneNumber = request.PhoneNumber,
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
+                LockoutEnd = null,
+                AccessFailedCount = 0,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                IsActive = true
+            };
+            
+            newUser.PasswordHash = _passwordHasher.HashPassword(newUser, request.Password);
+            newUser.LockoutEnabled = UserConsts.AllowedForNewUsers;
+            
+            await _userRepository.AddAsync(newUser, cancellationToken);
+            // Assign default role to the new user
+            
+            await transaction.CommitAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            if (UserConsts.RequireConfirmedEmail)
+            {
+                await ResendEmailConfirmationLinkAsync(newUser.Email, cancellationToken);
+            }
         }
-        
-        var passwordValidatorResult = _passwordValidator.Validate(request.Password);
-        if (!passwordValidatorResult.Succeeded)
+        catch (Exception)
         {
-            throw new AppValidationException(passwordValidatorResult.Errors);
-        }
-        
-        var newUser = new User
-        {
-            Id = Guid.NewGuid(),
-            Email = request.Email,
-            NormalizedEmail = request.Email.NormalizeValue(),
-            EmailConfirmed = false,
-            PhoneNumber = request.PhoneNumber,
-            PhoneNumberConfirmed = false,
-            TwoFactorEnabled = false,
-            LockoutEnd = null,
-            AccessFailedCount = 0,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            IsActive = true
-        };
-        
-        newUser.PasswordHash = _passwordHasher.HashPassword(newUser, request.Password);
-        newUser.LockoutEnabled = UserConsts.AllowedForNewUsers;
-        
-        await _userRepository.AddAsync(newUser, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        
-        if (UserConsts.RequireConfirmedEmail)
-        {
-            await ResendEmailConfirmationLinkAsync(newUser.Email, cancellationToken);
+            await transaction.RollbackAsync(cancellationToken);
+            
+            throw;
         }
     }
 
@@ -321,11 +337,19 @@ public class AuthAppService : IAuthAppService
             await transaction.CommitAsync(cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         
+            var emailBody = EmailTemplateExtensions.GetEmailConfirmationTemplate(
+                userName: matchedUser.FirstName ?? matchedUser.Email,
+                confirmationCode: newConfirmationCode.Code,
+                expiryMinutes: UserConsts.ConfirmationCodeExpiryMinutes,
+                appName: "Codium App"
+            );
+        
             _backgroundJobExecutor.Enqueue<SendEmailBackgroundJob, SendEmailBackgroundJobArgs>(new SendEmailBackgroundJobArgs
             {
                 To = matchedUser.Email,
-                Subject = "Email Confirmation",
-                Body = $"Your email confirmation code is: {newConfirmationCode.Code}",
+                Subject = "Email Confirmation - Codium",
+                Body = emailBody,
+                IsHtml = true,
                 CorrelationId = _httpContextAccessor.HttpContext?.GetCorrelationId() ?? Guid.NewGuid(),
             });
         }
@@ -395,11 +419,19 @@ public class AuthAppService : IAuthAppService
             await transaction.CommitAsync(cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             
+            var emailBody = EmailTemplateExtensions.GetPasswordResetTemplate(
+                userName: matchedUser.FirstName ?? matchedUser.Email,
+                resetCode: newConfirmationCode.Code,
+                expiryMinutes: UserConsts.ConfirmationCodeExpiryMinutes,
+                appName: "Codium App"
+            );
+            
             _backgroundJobExecutor.Enqueue<SendEmailBackgroundJob, SendEmailBackgroundJobArgs>(new SendEmailBackgroundJobArgs
             {
                 To = matchedUser.Email,
-                Subject = "Password Reset",
-                Body = $"Your password reset code is: {newConfirmationCode.Code}",
+                Subject = "Password Reset - Codium App",
+                Body = emailBody,
+                IsHtml = true,
                 CorrelationId = _httpContextAccessor.HttpContext?.GetCorrelationId() ?? Guid.NewGuid(),
             });
         }
@@ -411,6 +443,30 @@ public class AuthAppService : IAuthAppService
         }
     }
 
+    public async Task VerifyResetPasswordCodeAsync(VerifyResetPasswordCodeRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var matchedUser = await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
+        if (matchedUser == null)
+        {
+            throw new AppValidationException(_localizer["AuthAppService:VerifyResetPasswordCodeAsync:InvalidCode"]);
+        }
+
+        var matchedConfirmationCode = await _confirmationCodeRepository.SingleOrDefaultAsync(
+            predicate: cc =>
+                cc.UserId == matchedUser.Id &&
+                cc.Type == ConfirmationCodeTypes.ResetPassword &&
+                cc.Code == request.Code &&
+                !cc.IsUsed &&
+                cc.ExpiryTime > DateTime.UtcNow,
+            cancellationToken: cancellationToken
+        );
+
+        if (matchedConfirmationCode == null)
+        {
+            throw new AppValidationException(_localizer["AuthAppService:VerifyResetPasswordCodeAsync:InvalidCode"]);
+        }
+    }
+    
     public async Task ResetPasswordAsync(ResetPasswordRequestDto request, CancellationToken cancellationToken = default)
     {
         await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
@@ -479,7 +535,19 @@ public class AuthAppService : IAuthAppService
         {
             if (lockoutOnFailure)
             {
-                await UnlockAsync(user, cancellationToken);
+                // Başarılı giriş: Kilidi kaldır (kendi transaction'ında)
+                await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    await UnlockAsync(user, cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    throw;
+                }
             }
 
             return SignInResult.Success();
@@ -487,7 +555,19 @@ public class AuthAppService : IAuthAppService
 
         if (lockoutOnFailure)
         {
-            await AccessFailedAsync(user, cancellationToken);
+            // Başarısız giriş: AccessFailedCount'u artır (kendi transaction'ında)
+            await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                await AccessFailedAsync(user, cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
 
             if (IsLockedOut(user))
             {

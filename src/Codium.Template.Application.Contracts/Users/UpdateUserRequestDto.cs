@@ -12,6 +12,9 @@ public class UpdateUserRequestDto
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool EmailConfirmed { get; set; }
+    public bool PhoneNumberConfirmed { get; set; }
+    public bool TwoFactorEnabled { get; set; }
 }
 
 public class UpdateUserRequestDtoValidator : AbstractValidator<UpdateUserRequestDto>

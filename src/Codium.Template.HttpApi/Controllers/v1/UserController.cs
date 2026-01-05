@@ -118,18 +118,6 @@ public class UserController : ControllerBase
         return NoContent();
     }
     
-    [HttpPatch("{id:guid}/assign")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [PermissionAuthorize(PermissionConsts.User.AssignRole)]
-    public async Task<IActionResult> AddToRolesAsync(
-        [FromRoute(Name = "id")] Guid id,
-        [FromBody] List<Guid> roleIds,
-        CancellationToken cancellationToken = default)
-    {
-        await _userAppService.AddToRolesAsync(id, roleIds, cancellationToken);
-        return NoContent();
-    }
-    
     [HttpPatch("{id:guid}/unassign/{roleId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [PermissionAuthorize(PermissionConsts.User.UnAssignRole)]
@@ -142,15 +130,15 @@ public class UserController : ControllerBase
         return NoContent();
     }
     
-    [HttpPatch("{id:guid}/unassign")]
+    [HttpPatch("{id:guid}/sync-roles")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [PermissionAuthorize(PermissionConsts.User.UnAssignRole)]
-    public async Task<IActionResult> RemoveFromRolesAsync(
+    [PermissionAuthorize(PermissionConsts.User.AssignRole)]
+    public async Task<IActionResult> SyncRolesAsync(
         [FromRoute(Name = "id")] Guid id,
-        [FromBody] List<Guid> roleIds,
+        [FromBody] SyncUserRolesRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        await _userAppService.RemoveFromRolesAsync(id, roleIds, cancellationToken);
+        await _userAppService.SyncRolesAsync(id, request, cancellationToken);
         return NoContent();
     }
     

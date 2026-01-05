@@ -11,7 +11,16 @@ public abstract class GetListRequestDto
     public int PerPage { get; set; } = 10;
     public string? Search { get; set; }
     public string? Field { get; set; }
-    public SortOrderTypes Order { get; set; } = SortOrderTypes.Asc;
+    public SortOrderTypes Order { get; set; } = SortOrderTypes.Desc;
+    
+    public SortRequest GetSortRequest(string? defaultField = null)
+    {
+        return new SortRequest()
+        {
+            Field = this.Field ?? defaultField,
+            Order = this.Order
+        };
+    }
 }
 
 public class GetListRequestDtoValidator : AbstractValidator<GetListRequestDto>

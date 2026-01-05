@@ -6,6 +6,7 @@ using Codium.Template.Application.Contracts.Common.Results;
 using Codium.Template.Application.Contracts.Roles;
 using Codium.Template.Application.Contracts.Users;
 using Codium.Template.Domain.Repositories;
+using Codium.Template.Domain.Shared.BaseEntities.Abstractions;
 using Codium.Template.Domain.Shared.Exceptions.Types;
 using Codium.Template.Domain.Shared.Extensions;
 using Codium.Template.Domain.Shared.Querying;
@@ -92,7 +93,7 @@ public class UserAppService : IUserAppService
 
     public async Task<List<UserResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var matchedUsers = await _userRepository.GetListAsync(
+        var matchedUsers = await _userRepository.GetAllAsync(
             orderBy: q => q.OrderBy(r => r.NormalizedEmail),
             enableTracking: false,
             cancellationToken: cancellationToken
@@ -103,17 +104,17 @@ public class UserAppService : IUserAppService
 
     public async Task<PagedResult<UserResponseDto>> GetPageableAndFilterAsync(GetListUsersRequestDto request, CancellationToken cancellationToken = default)
     {
-        var pagedUsers = await _userRepository.GetListSortedAsync(
-            page: request.Page,
-            perPage: request.PerPage,
-            predicate: !string.IsNullOrWhiteSpace(request.Search)
-                ? u => 
-                    u.NormalizedEmail.Contains(request.Search.NormalizeValue())
-                : null,
-            sort: new SortRequest(request.Field, request.Order),
-            enableTracking: false,
-            cancellationToken: cancellationToken
+        var queryable = _userRepository.AsQueryable();
+        
+        queryable = queryable.WhereIf(request.IsActive.HasValue, u => u.IsActive == request.IsActive!.Value);
+        queryable = queryable.WhereIf(
+            !string.IsNullOrWhiteSpace(request.Search),
+            u => u.NormalizedEmail.Contains(request.Search!.NormalizeValue())
         );
+        
+        queryable = queryable.AsNoTracking();
+        queryable = queryable.ApplySort(request.GetSortRequest(nameof(CreationAuditedEntity.CreationTime)));
+        var pagedUsers = await queryable.ToPageableAsync(request.Page, request.PerPage, cancellationToken);
 
         var mappedUsers = _mapper.Map<List<UserResponseDto>>(pagedUsers.Data);
 
@@ -170,6 +171,9 @@ public class UserAppService : IUserAppService
         matchedUser.FirstName = request.FirstName;
         matchedUser.LastName = request.LastName;
         matchedUser.IsActive = request.IsActive;
+        matchedUser.EmailConfirmed = request.EmailConfirmed;
+        matchedUser.PhoneNumberConfirmed = request.PhoneNumberConfirmed;
+        matchedUser.TwoFactorEnabled = request.TwoFactorEnabled;
 
         matchedUser =  await _userRepository.UpdateAsync(matchedUser, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -219,48 +223,6 @@ public class UserAppService : IUserAppService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task AddToRolesAsync(Guid id, List<Guid> roleIds, CancellationToken cancellationToken = default)
-    {
-        var matchedUser = await _userRepository.GetAsync(
-            predicate: u => u.Id == id,
-            enableTracking: true,
-            cancellationToken: cancellationToken
-        );
-
-        var matchedRoles = await _roleRepository.GetAllAsync(
-            predicate: r => roleIds.Contains(r.Id),
-            enableTracking: false,
-            cancellationToken: cancellationToken
-        );
-        
-        if (matchedRoles.Count != roleIds.Count)
-        {
-            throw new AppEntityNotFoundException(_localizer["UserAppService:AddToRolesAsync:MissingRoles"]);
-        }
-        
-        var existUserRoles = await _userRoleRepository.GetAllAsync(
-            predicate: ur => 
-                ur.RoleId == id && 
-                roleIds.Contains(ur.Role!.Id),
-            enableTracking: false,
-            cancellationToken: cancellationToken
-        );
-        
-        if (existUserRoles.Count != 0)
-        {
-            throw new AppConflictException(_localizer["UserAppService:AddToRolesAsync:Exists"]);
-        }
-        
-        var newUserRoles = matchedRoles.Select(p => new UserRole
-        {
-            RoleId = p.Id,
-            UserId = matchedUser.Id
-        }).ToList();
-        
-        await _userRoleRepository.AddRangeAsync(newUserRoles, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
     public async Task RemoveFromRoleAsync(Guid id, Guid roleId, CancellationToken cancellationToken = default)
     {
         var matchedUser = await _userRepository.GetAsync(
@@ -291,39 +253,63 @@ public class UserAppService : IUserAppService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task RemoveFromRolesAsync(Guid id, List<Guid> roleIds, CancellationToken cancellationToken = default)
+    public async Task SyncRolesAsync(Guid id, SyncUserRolesRequestDto request, CancellationToken cancellationToken = default)
     {
-        var matchedUser = await _userRepository.GetAsync(
-            predicate: u => u.Id == id,
-            enableTracking: true,
-            cancellationToken: cancellationToken
-        );
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        
+        try
+        {
+            var matchedUser = await _userRepository.GetAsync(
+                predicate: u => u.Id == id,
+                include: q => q.Include(u => u.UserRoles),
+                enableTracking: true,
+                cancellationToken: cancellationToken
+            );
 
-        var matchedRoles =  await _roleRepository.GetAllAsync(
-            predicate: r => roleIds.Contains(r.Id),
-            enableTracking: false,
-            cancellationToken: cancellationToken
-        );
-        
-        if (matchedRoles.Count != roleIds.Count)
-        {
-            throw new AppEntityNotFoundException(_localizer["UserAppService:RemoveFromRolesAsync:MissingRoles"]);
+            var currentRoleIds = matchedUser.UserRoles.Select(ur => ur.RoleId).ToList();
+            
+            var rolesToAdd = request.RoleIds.Except(currentRoleIds).ToList();
+            var rolesToRemove = currentRoleIds.Except(request.RoleIds).ToList();
+
+            if (rolesToAdd.Any())
+            {
+                var existingRoles = await _roleRepository.GetAllAsync(
+                    predicate: r => rolesToAdd.Contains(r.Id),
+                    enableTracking: false,
+                    cancellationToken: cancellationToken
+                );
+
+                if (existingRoles.Count != rolesToAdd.Count)
+                {
+                    throw new AppEntityNotFoundException(_localizer["UserAppService:SyncRolesAsync:MissingRoles"]);
+                }
+
+                var newUserRoles = rolesToAdd.Select(roleId => new UserRole
+                {
+                    UserId = matchedUser.Id,
+                    RoleId = roleId
+                }).ToList();
+
+                await _userRoleRepository.AddRangeAsync(newUserRoles, cancellationToken: cancellationToken);
+            }
+
+            if (rolesToRemove.Any())
+            {
+                var userRolesToRemove = matchedUser.UserRoles
+                    .Where(ur => rolesToRemove.Contains(ur.RoleId))
+                    .ToList();
+
+                await _userRoleRepository.DeleteRangeAsync(userRolesToRemove, cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
-        
-        var matchedUserRoles = await _userRoleRepository.GetAllAsync(
-            predicate: ur =>
-                ur.UserId == matchedUser.Id &&
-                matchedRoles.Select(r => r.Id).Contains(ur.RoleId),
-            cancellationToken: cancellationToken
-        );
-        
-        if (matchedUserRoles.Count != matchedRoles.Count)
+        catch
         {
-            throw new AppConflictException(_localizer["UserAppService:RemoveFromRolesAsync:MissingRolePermissions"]);
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
         }
-        
-        await _userRoleRepository.DeleteRangeAsync(matchedUserRoles, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task ToggleEmailConfirmationAsync(Guid id, CancellationToken cancellationToken = default)
@@ -390,6 +376,15 @@ public class UserAppService : IUserAppService
         
         await _userRepository.UpdateAsync(matchedUser, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        
+        _backgroundJobExecutor.Enqueue<InvalidateAllSessionsBackgroundJob, InvalidateAllSessionsBackgroundJobArgs>(
+            new InvalidateAllSessionsBackgroundJobArgs
+            {
+                UserId = matchedUser.Id,
+                Reason = "User locked out by admin",
+                CorrelationId = _httpContextAccessor.HttpContext?.GetCorrelationId() ?? Guid.NewGuid()
+            }
+        );
     }
 
     public async Task UnlockAsync(Guid id, CancellationToken cancellationToken = default)

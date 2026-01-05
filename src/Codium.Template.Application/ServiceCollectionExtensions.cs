@@ -8,6 +8,7 @@ using Codium.Template.Application.Contracts.Auth;
 using Codium.Template.Application.Contracts.AuthTokens;
 using Codium.Template.Application.Contracts.BackgroundJobs;
 using Codium.Template.Application.Contracts.CronJobs;
+using Codium.Template.Application.Contracts.Email;
 using Codium.Template.Application.Contracts.Permissions;
 using Codium.Template.Application.Contracts.Profiles;
 using Codium.Template.Application.Contracts.Roles;
@@ -15,6 +16,7 @@ using Codium.Template.Application.Contracts.Sessions;
 using Codium.Template.Application.Contracts.SnapshotLogs;
 using Codium.Template.Application.Contracts.Users;
 using Codium.Template.Application.CronJobs;
+using Codium.Template.Application.Email;
 using Codium.Template.Application.Permissions;
 using Codium.Template.Application.Profiles;
 using Codium.Template.Application.Roles;
@@ -22,6 +24,7 @@ using Codium.Template.Application.Sessions;
 using Codium.Template.Application.SnapshotLogs;
 using Codium.Template.Application.Users;
 using Codium.Template.Domain.Repositories;
+using Codium.Template.Domain.Shared.Email;
 using Codium.Template.Domain.Shared.Extensions;
 using Codium.Template.Domain.Shared.Localization;
 using Codium.Template.Domain.Shared.Users;
@@ -45,6 +48,8 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddApplicationService(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
+
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         var referencedAssemblies = Assembly.GetExecutingAssembly()
@@ -70,6 +75,7 @@ public static class ServiceCollectionExtensions
         services.AddIdentityConfiguration();
         services.AddHangfireServiceRegistration(configuration);
         
+        services.AddScoped<IEmailAppService, EmailAppService>();
         services.AddScoped<ISnapshotLogAppService, SnapshotLogAppService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<ICurrentUser, CurrentUser>();

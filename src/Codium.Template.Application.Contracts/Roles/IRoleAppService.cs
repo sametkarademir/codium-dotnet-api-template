@@ -12,7 +12,6 @@ public interface IRoleAppService
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     
     Task AddToPermissionAsync(Guid id, Guid permissionId, CancellationToken cancellationToken = default);
-    Task AddToPermissionsAsync(Guid id, List<Guid> permissionIds, CancellationToken cancellationToken = default);
     Task RemoveFromPermissionAsync(Guid id, Guid permissionId, CancellationToken cancellationToken = default);
-    Task RemoveFromPermissionsAsync(Guid id, List<Guid> permissionIds, CancellationToken cancellationToken = default);
+    Task SyncPermissionsAsync(Guid id, SyncRolePermissionsRequestDto request, CancellationToken cancellationToken = default);
 }

@@ -6,6 +6,11 @@ public class PagedResult<T> where T : IEntityDto
 {
     public List<T> Data { get; set; }
     public PageableMeta Meta { get; set; }
+
+    public PagedResult()
+    {
+        
+    }
     
     public PagedResult(List<T> data, int totalCount, int page, int perPage)
     {
@@ -25,6 +30,11 @@ public record PageableMeta
     public bool IsFirstPage { get; set; }
     public bool IsLastPage { get; set; }
 
+    public PageableMeta()
+    {
+        
+    }
+    
     public PageableMeta(int totalCount, int page, int perPage)
     {
         var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling((double)totalCount / perPage);

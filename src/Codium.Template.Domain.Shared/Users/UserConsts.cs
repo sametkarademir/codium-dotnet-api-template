@@ -25,7 +25,7 @@ public static class UserConsts
     
     // SignIn settings
     public const int MaxActiveSessionsPerUser = 5;
-    public const bool RequireConfirmedEmail = false;
+    public const bool RequireConfirmedEmail = true;
     public const bool RequireConfirmedPhoneNumber = false;
     public const int ConfirmationCodeExpiryMinutes = 5;
 }

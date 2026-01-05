@@ -12,9 +12,8 @@ public interface IUserAppService
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task AddToRoleAsync(Guid id, Guid roleId, CancellationToken cancellationToken = default);
-    Task AddToRolesAsync(Guid id, List<Guid> roleIds, CancellationToken cancellationToken = default);
     Task RemoveFromRoleAsync(Guid id, Guid roleId, CancellationToken cancellationToken = default);
-    Task RemoveFromRolesAsync(Guid id, List<Guid> roleIds, CancellationToken cancellationToken = default);
+    Task SyncRolesAsync(Guid id, SyncUserRolesRequestDto request, CancellationToken cancellationToken = default);
 
     Task ToggleEmailConfirmationAsync(Guid id, CancellationToken cancellationToken = default);
     Task TogglePhoneNumberConfirmationAsync(Guid id, CancellationToken cancellationToken = default);

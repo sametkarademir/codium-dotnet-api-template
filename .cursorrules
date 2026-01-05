@@ -1,0 +1,452 @@
+# Codium.Template .NET API - Cursor Rules
+
+## Project Architecture
+
+This project follows a **layered architecture** pattern with the following layers:
+
+1. **.Domain.Shared**: Shared domain abstractions, base entities, interfaces, exceptions, extensions
+2. **.Domain**: Domain entities, domain-specific repositories interfaces
+3. **.Application.Contracts**: DTOs, request/response models, service interfaces
+4. **.Application**: Application services, business logic, AutoMapper profiles
+5. **.EntityFrameworkCore**: EF Core implementations, DbContext, entity configurations, repository implementations
+6. **.HttpApi**: Controllers, API attributes
+7. **.HttpApi.Host**: Host configuration, Program.cs, middlewares, logging
+
+## Naming Conventions
+
+### Entities
+- Use **PascalCase** for entity names (e.g., `User`, `Todo`, `Role`)
+- Entities inherit from base entities: `Entity<TKey>`, `CreationAuditedEntity<TKey>`, `AuditedEntity<TKey>`, `FullAuditedEntity<TKey>`
+- Place entities in `**.Domain/{EntityName}/` folder
+- Entity file name: `{EntityName}.cs`
+
+### DTOs (Data Transfer Objects)
+- **Request DTOs**: `{Action}{Entity}RequestDto` (e.g., `CreateUserRequestDto`, `UpdateUserRequestDto`, `GetListUsersRequestDto`)
+- **Response DTOs**: `{Entity}ResponseDto` (e.g., `UserResponseDto`, `TodoResponseDto`)
+- Request DTOs for list operations: `GetList{Entity}RequestDto` (inherits from `GetListRequestDto`)
+- Place DTOs in `**.Application.Contracts/{EntityName}/` folder
+- DTOs should inherit from base DTOs when appropriate: `EntityDto<TKey>`, `CreationAuditedEntityDto<TKey>`, etc.
+
+### Application Services
+- **Interface**: `I{Entity}AppService` (e.g., `IUserAppService`, `ITodoAppService`)
+- **Implementation**: `{Entity}AppService` (e.g., `UserAppService`, `TodoAppService`)
+- Place interfaces in `**.Application.Contracts/{EntityName}/`
+- Place implementations in `**.Application/{EntityName}/`
+- Service file name: `{Entity}AppService.cs`
+
+### Repositories
+- **Interface**: `I{Entity}Repository` (e.g., `IUserRepository`, `ITodoRepository`)
+- **Implementation**: `{Entity}Repository` (e.g., `UserRepository`, `TodoRepository`)
+- Repository interfaces inherit from `IRepository<TEntity, TKey>`
+- Place interfaces in `**.Domain/Repositories/`
+- Place implementations in `**.EntityFrameworkCore/Repositories/`
+- Repository file name: `I{Entity}Repository.cs` and `{Entity}Repository.cs`
+
+### Controllers
+- **Controller name**: `{Entity}Controller` (e.g., `UserController`, `TodoController`)
+- Place in `**.HttpApi/Controllers/v1/`
+- Controller file name: `{Entity}Controller.cs`
+- Use `[ApiController]`, `[Route("api/v1/{entity-name}")]`, `[Authorize]`, `[EnableRateLimiting("api")]`
+
+### Entity Configurations
+- **Configuration name**: `{Entity}Configuration` (e.g., `UserConfiguration`, `TodoConfiguration`)
+- Implement `IEntityTypeConfiguration<TEntity>`
+- Place in `**.EntityFrameworkCore/EntityConfigurations/`
+- Configuration file name: `{Entity}Configuration.cs`
+
+### Validators
+- **Validator name**: `{Dto}Validator` (e.g., `CreateUserRequestDtoValidator`)
+- Inherit from `AbstractValidator<TDto>`
+- Place in the same file as the DTO or in a separate file in the same namespace
+- Use localization: `IStringLocalizer<ApplicationResource>`
+
+## Code Structure Patterns
+
+### Application Service Pattern
+
+```csharp
+public class {Entity}AppService : I{Entity}AppService
+{
+    private readonly I{Entity}Repository _{entity}Repository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+    private readonly ICurrentUser _currentUser;
+    private readonly IStringLocalizer<{Entity}AppService> _localizer;
+
+    public {Entity}AppService(
+        I{Entity}Repository {entity}Repository,
+        IUnitOfWork unitOfWork,
+        IMapper mapper,
+        ICurrentUser currentUser,
+        IStringLocalizer<{Entity}AppService> localizer)
+    {
+        _{entity}Repository = {entity}Repository;
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+        _currentUser = currentUser;
+        _localizer = localizer;
+    }
+
+    // Methods follow async pattern with CancellationToken
+    public async Task<{Entity}ResponseDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var matched{Entity} = await _{entity}Repository.GetAsync(
+            predicate: e => e.Id == id,
+            enableTracking: false,
+            cancellationToken: cancellationToken
+        );
+        
+        return _mapper.Map<{Entity}ResponseDto>(matched{Entity});
+    }
+}
+```
+
+### Repository Pattern
+
+```csharp
+// Interface in **.Domain/Repositories/
+public interface I{Entity}Repository : IRepository<{Entity}, Guid>
+{
+    // Add custom repository methods if needed
+}
+
+// Implementation in **.EntityFrameworkCore/Repositories/
+public class {Entity}Repository : EfRepositoryBase<{Entity}, Guid>, I{Entity}Repository
+{
+    public {Entity}Repository(ApplicationDbContext context) : base(context)
+    {
+    }
+}
+```
+
+### Entity Pattern
+
+```csharp
+public class {Entity} : FullAuditedEntity<Guid>
+{
+    // Properties with proper types
+    public string PropertyName { get; set; } = null!; // Required
+    public string? OptionalProperty { get; set; } // Optional
+    
+    // Navigation properties
+    public virtual ICollection<RelatedEntity> RelatedEntities { get; set; } = [];
+    public virtual RelatedEntity? RelatedEntity { get; set; }
+}
+```
+
+### DTO Pattern
+
+```csharp
+// Request DTO
+public class Create{Entity}RequestDto
+{
+    public string PropertyName { get; set; } = null!;
+    public string? OptionalProperty { get; set; }
+}
+
+public class Create{Entity}RequestDtoValidator : AbstractValidator<Create{Entity}RequestDto>
+{
+    public Create{Entity}RequestDtoValidator(IStringLocalizer<ApplicationResource> localizer)
+    {
+        RuleFor(item => item.PropertyName)
+            .NotEmpty().WithMessage(localizer["Create{Entity}RequestDto:PropertyName:IsRequired"])
+            .MaximumLength({Entity}Consts.PropertyNameMaxLength)
+            .WithMessage(localizer["Create{Entity}RequestDto:PropertyName:MaxLength", {Entity}Consts.PropertyNameMaxLength]);
+    }
+}
+
+// Response DTO
+public class {Entity}ResponseDto : EntityDto<Guid>
+{
+    public string PropertyName { get; set; } = null!;
+    public string? OptionalProperty { get; set; }
+}
+```
+
+### Controller Pattern
+
+```csharp
+[ApiController]
+[Route("api/v1/{entity-name}")]
+[Authorize]
+[EnableRateLimiting("api")]
+public class {Entity}Controller : ControllerBase
+{
+    private readonly I{Entity}AppService _{entity}AppService;
+
+    public {Entity}Controller(I{Entity}AppService {entity}AppService)
+    {
+        _{entity}AppService = {entity}AppService;
+    }
+    
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof({Entity}ResponseDto), StatusCodes.Status200OK)]
+    [PermissionAuthorize(PermissionConsts.{Entity}.GetById)]
+    public async Task<IActionResult> GetByIdAsync(
+        [FromRoute(Name = "id")] Guid id, 
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _{entity}AppService.GetByIdAsync(id, cancellationToken);
+        return Ok(response);
+    }
+}
+```
+
+### Entity Configuration Pattern
+
+```csharp
+public class {Entity}Configuration : IEntityTypeConfiguration<{Entity}>
+{
+    public void Configure(EntityTypeBuilder<{Entity}> builder)
+    {
+        builder.ApplyGlobalEntityConfigurations();
+        
+        builder.ToTable(ApplicationConsts.DbTablePrefix + "{Entities}", ApplicationConsts.DbSchema);
+        
+        builder.Property(item => item.PropertyName)
+            .HasMaxLength({Entity}Consts.PropertyNameMaxLength)
+            .IsRequired();
+        
+        // Relationships
+        builder.HasOne(item => item.RelatedEntity)
+            .WithMany()
+            .HasForeignKey(item => item.RelatedEntityId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+```
+
+## Key Principles
+
+### 1. Dependency Injection
+- All dependencies are injected via constructor
+- Use private readonly fields with underscore prefix (e.g., `_userRepository`)
+- Register services in `ServiceCollectionExtensions.cs` in Application layer
+
+### 2. Async/Await Pattern
+- All repository and service methods are async
+- Always include `CancellationToken cancellationToken = default` parameter
+- Use `await` for all async operations
+
+### 3. Repository Methods
+- Use `GetAsync()` with predicate, include, enableTracking parameters
+- Use `GetAllAsync()` for list operations
+- Use `AsQueryable()` for complex queries
+- Use `AddAsync()`, `UpdateAsync()`, `DeleteAsync()` for write operations
+- Always call `_unitOfWork.SaveChangesAsync()` after write operations
+
+### 4. Exception Handling
+- Use custom exception types:
+  - `AppValidationException` for validation errors
+  - `AppEntityNotFoundException` for not found entities
+  - `AppConflictException` for conflicts (duplicates, etc.)
+  - `AppBusinessException` for business rule violations
+  - `AppForbiddenException` for authorization failures
+  - `AppUnauthorizedException` for authentication failures
+- Always use localization for exception messages: `_localizer["Key"]`
+
+### 5. Validation
+- Use FluentValidation for DTO validation
+- Validators should be in the same namespace as DTOs
+- Use localization for validation messages
+- Validation is automatic via `ValidationActionFilter`
+
+### 6. AutoMapper
+- Define mappings in `ApplicationAutoMapperProfiles.cs`
+- Use `CreateMap<Source, Destination>()`
+- Use `_mapper.Map<TDestination>(source)` in services
+
+### 7. Querying and Filtering
+- Use `WhereIf()` extension for conditional filtering
+- Use `ApplySort()` extension for sorting
+- Use `ToPageableAsync()` extension for pagination
+- Use `AsNoTracking()` for read-only queries
+
+### 8. Unit of Work
+- Always use `IUnitOfWork` for transaction management
+- Call `SaveChangesAsync()` after write operations
+- Use `BeginTransactionAsync()` for complex transactions
+
+### 9. Permissions
+- Use `[PermissionAuthorize(PermissionConsts.{Entity}.{Action})]` attribute
+- Define permissions in `PermissionConsts` class
+- Permissions follow pattern: `{Entity}.{Action}` (e.g., `User.GetById`, `Todo.Create`)
+
+### 10. Localization
+- Use `IStringLocalizer<ApplicationResource>` for DTO validators
+- Use `IStringLocalizer<{ServiceName}>` for service exceptions
+- Localization keys follow pattern: `{ClassName}:{MethodName}:{Key}`
+
+### 11. Base Entities
+- Use `Entity<TKey>` for simple entities
+- Use `CreationAuditedEntity<TKey>` for entities with creation tracking
+- Use `AuditedEntity<TKey>` for entities with creation and modification tracking
+- Use `FullAuditedEntity<TKey>` for entities with full audit (creation, modification, deletion)
+
+### 12. Constants
+- Define entity-specific constants in `{Entity}Consts` class (e.g., `UserConsts`, `TodoConsts`)
+- Place constants in `**.Domain.Shared/{EntityName}/` folder
+- Include max lengths, default values, etc.
+
+### 13. Background Jobs
+- Implement `IBackgroundJob<TArgs>` interface
+- Place in `**.Application/BackgroundJobs/{JobName}/`
+- Use `IBackgroundJobExecutor` to enqueue jobs
+- Register jobs in `ServiceCollectionExtensions.cs`
+
+### 14. Entity Framework Core
+- Use `ApplicationDbContext` for database context
+- Entity configurations use `IEntityTypeConfiguration<TEntity>`
+- Always call `builder.ApplyGlobalEntityConfigurations()` in configurations
+- Use `ApplicationConsts.DbTablePrefix` and `ApplicationConsts.DbSchema` for table names
+
+### 15. HTTP Status Codes
+- `200 OK` for successful GET, PUT, POST operations
+- `204 NoContent` for successful DELETE, PATCH operations (when no content returned)
+- Exceptions automatically map to appropriate status codes
+
+## File Organization
+
+```
+**.Domain/
+  ├── {EntityName}/
+  │   └── {EntityName}.cs
+  └── Repositories/
+      └── I{EntityName}Repository.cs
+
+**.Domain.Shared/
+  ├── BaseEntities/
+  ├── Repositories/
+  ├── Exceptions/
+  ├── Extensions/
+  └── {EntityName}/
+      └── {EntityName}Consts.cs
+
+**.Application.Contracts/
+  └── {EntityName}/
+      ├── I{EntityName}AppService.cs
+      ├── Create{EntityName}RequestDto.cs
+      ├── Update{EntityName}RequestDto.cs
+      ├── GetList{EntityName}RequestDto.cs
+      └── {EntityName}ResponseDto.cs
+
+**.Application/
+  ├── {EntityName}/
+  │   └── {EntityName}AppService.cs
+  └── ApplicationAutoMapperProfiles.cs
+
+**.EntityFrameworkCore/
+  ├── EntityConfigurations/
+  │   └── {EntityName}Configuration.cs
+  ├── Repositories/
+  │   └── {EntityName}Repository.cs
+  └── Contexts/
+      └── ApplicationDbContext.cs
+
+**.HttpApi/
+  └── Controllers/
+      └── v1/
+          └── {EntityName}Controller.cs
+```
+
+## Best Practices
+
+1. **Always use CancellationToken** in async methods
+2. **Use enableTracking: false** for read-only queries
+3. **Use enableTracking: true** for update operations
+4. **Always validate input** using FluentValidation
+5. **Use localization** for all user-facing messages
+6. **Handle exceptions** appropriately with custom exception types
+7. **Use transactions** for multi-step operations
+8. **Follow RESTful conventions** in controllers
+9. **Use AutoMapper** for entity-to-DTO mapping
+10. **Apply permissions** to all controller actions
+11. **Use rate limiting** on controllers
+12. **Document complex logic** with comments
+13. **Use meaningful variable names** (e.g., `matchedUser` instead of `user`)
+14. **Use null-forgiving operator** (`!`) only when absolutely necessary
+15. **Initialize collections** with `= []` or `= new List<T>()`
+
+## Common Patterns
+
+### Pagination Pattern
+```csharp
+var queryable = _repository.AsQueryable();
+queryable = queryable.WhereIf(condition, predicate);
+queryable = queryable.AsNoTracking();
+queryable = queryable.ApplySort(request.GetSortRequest(defaultField));
+var pagedResult = await queryable.ToPageableAsync(request.Page, request.PerPage, cancellationToken);
+var mappedData = _mapper.Map<List<ResponseDto>>(pagedResult.Data);
+return new PagedResult<ResponseDto>(mappedData, pagedResult.TotalCount, pagedResult.Page, pagedResult.PerPage);
+```
+
+### Create Pattern
+```csharp
+// Validate existence
+var existing = await _repository.ExistsAsync(predicate, cancellationToken);
+if (existing) throw new AppConflictException(_localizer["Key"]);
+
+// Create entity
+var newEntity = new Entity { /* properties */ };
+newEntity = await _repository.AddAsync(newEntity, cancellationToken);
+await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+return _mapper.Map<ResponseDto>(newEntity);
+```
+
+### Update Pattern
+```csharp
+var matchedEntity = await _repository.GetAsync(
+    predicate: e => e.Id == id,
+    enableTracking: true,
+    cancellationToken: cancellationToken
+);
+
+matchedEntity.Property = request.Property;
+matchedEntity = await _repository.UpdateAsync(matchedEntity, cancellationToken);
+await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+return _mapper.Map<ResponseDto>(matchedEntity);
+```
+
+### Delete Pattern
+```csharp
+var matchedEntity = await _repository.GetAsync(
+    predicate: e => e.Id == id,
+    cancellationToken: cancellationToken
+);
+
+await _repository.DeleteAsync(matchedEntity, cancellationToken);
+await _unitOfWork.SaveChangesAsync(cancellationToken);
+```
+
+### Transaction Pattern
+```csharp
+await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+try
+{
+    // Multiple operations
+    await transaction.CommitAsync(cancellationToken);
+    await _unitOfWork.SaveChangesAsync(cancellationToken);
+}
+catch
+{
+    await transaction.RollbackAsync(cancellationToken);
+    throw;
+}
+```
+
+## Important Notes
+
+- **Never expose domain entities** directly from controllers - always use DTOs
+- **Always use repositories** - never access DbContext directly from services
+- **Use UnitOfWork** for transaction management
+- **Apply soft delete filter** automatically for `FullAuditedEntity` entities
+- **Use correlation IDs** for request tracking
+- **Follow RESTful naming** for controller routes and actions
+- **Use HTTP verbs correctly**: GET (read), POST (create), PUT (update), PATCH (partial update), DELETE (delete)
+- **Always include ProducesResponseType** attributes in controllers
+- **Use [FromRoute]**, **[FromQuery]**, **[FromBody]** attributes explicitly
+- **Enable tracking only when needed** - prefer `AsNoTracking()` for reads
+
