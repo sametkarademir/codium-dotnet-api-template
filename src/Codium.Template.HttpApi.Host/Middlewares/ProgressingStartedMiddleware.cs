@@ -27,6 +27,19 @@ public class ProgressingStartedMiddleware(
 
         try
         {
+            var sessionId = context.User.GetSessionId();
+            if (sessionId != null)
+            {
+                context.SetSessionId((Guid)sessionId);
+            }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+
+        try
+        {
             if (!memoryCache.TryGetValue(nameof(SnapshotLog), out Guid latestSnapshotId))
             {
                 var snapshotLogRepository = context.RequestServices.GetRequiredService<ISnapshotLogRepository>();
