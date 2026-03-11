@@ -1,0 +1,40 @@
+---
+description: Background job and scheduling rules for Codium.Template
+globs: src/Codium.Template.Application/BackgroundJobs/**/*.cs
+alwaysApply: false
+---
+
+# Background Jobs
+
+- **Location and responsibilities**
+  - Implement background jobs in the Application layer under `BackgroundJobs/{JobName}/`.
+  - Jobs should encapsulate application-level workflows that can be retried or scheduled, not HTTP or infrastructure details.
+
+- **Job contracts**
+  - Define job argument types (`{JobName}Args`) as simple, serializable classes.
+  - Implement jobs as `IBackgroundJob<{JobName}Args>` (or the project’s background job abstraction).
+  - Jobs should:
+    - Be idempotent where possible.
+    - Accept `CancellationToken cancellationToken = default`.
+    - Use application services and repositories instead of `ApplicationDbContext` directly.
+
+- **Enqueuing and execution**
+  - Use `IBackgroundJobExecutor` (or equivalent) from application services to enqueue jobs.
+  - Do not enqueue jobs directly from controllers; controllers should call application services which decide whether to enqueue.
+
+- **Unit of Work and transactions**
+  - For multi-step operations inside a job, use `IUnitOfWork.BeginTransactionAsync` and `SaveChangesAsync` to ensure consistency.
+  - Prefer small, focused jobs over very large multi-responsibility jobs.
+
+- **Error handling and logging**
+  - Log important events and failures using `ILogger<TJob>`.
+  - Throw project-specific exceptions where appropriate; allow the job infrastructure (e.g. Hangfire) to manage retries.
+
+- **Scheduling and cron-like jobs**
+  - For recurring/cron jobs, define:
+    - A recurring registration in the host or infrastructure layer (e.g. Hangfire recurring jobs).
+    - A corresponding job implementation in the Application layer that:
+      - Reads any configuration (e.g. schedule, limits) from configuration/consts, not hard-coded scattered values.
+      - Uses repositories and services to perform periodic work (cleanup, sync, reporting, etc.).
+  - Keep cron expressions and schedule configuration centralized (e.g. a single configuration class/section) to avoid duplication.
+

@@ -1,0 +1,40 @@
+---
+description: Core architecture and layering rules for Codium.Template .NET API
+alwaysApply: true
+---
+
+# Architecture and Layering
+
+- **Layers and responsibilities**
+  - Use the existing projects strictly:
+    - `*.Domain.Shared`: base entities, shared abstractions, exceptions, extensions, per-entity consts.
+    - `*.Domain`: domain entities and domain-specific repository interfaces only.
+    - `*.Application.Contracts`: DTOs and application service interfaces, no business logic.
+    - `*.Application`: application services, background jobs, AutoMapper profiles, no direct `DbContext`.
+    - `*.EntityFrameworkCore`: `ApplicationDbContext`, entity configurations, repository implementations.
+    - `*.HttpApi`: controllers, HTTP attributes, filters.
+    - `*.HttpApi.Host`: host, middlewares, logging, configuration.
+
+- **Vertical slice per entity/module**
+  - When adding a new entity/module (e.g. `Todo`), mirror the existing `User`/`Role` pattern:
+    - Domain.Shared: `{Entity}Consts` in `{EntityName}/` folder.
+    - Domain: `{Entity}` entity in `{EntityName}/` folder.
+    - Application.Contracts: request/response DTOs and `I{Entity}AppService`.
+    - Application: `{Entity}AppService` implementation.
+    - EntityFrameworkCore: `{Entity}Configuration` and `{Entity}Repository`.
+    - HttpApi: `{Entity}Controller` with v1 route.
+
+- **Naming conventions (summary)**
+  - Entities: `{Entity}` in `*.Domain/{EntityName}/{EntityName}.cs`.
+  - DTOs: `{Action}{Entity}RequestDto`, `{Entity}ResponseDto` in `*.Application.Contracts/{EntityName}/`.
+  - App services: `I{Entity}AppService` / `{Entity}AppService` under the corresponding contracts/application folders.
+  - Repositories: `I{Entity}Repository` in `*.Domain/Repositories/`, `{Entity}Repository` in `*.EntityFrameworkCore/Repositories/`.
+  - Controllers: `{Entity}Controller` in `*.HttpApi/Controllers/v1/`.
+  - EF configurations: `{Entity}Configuration` in `*.EntityFrameworkCore/EntityConfigurations/`.
+
+- **General technical rules**
+  - All data access goes through repositories; services should not depend on `ApplicationDbContext`.
+  - All controller responses use DTOs; never expose domain entities directly over HTTP.
+  - Prefer async everywhere, always take `CancellationToken cancellationToken = default`.
+  - Use project-specific exception types (`AppValidationException`, `AppEntityNotFoundException`, etc.) with localized messages.
+

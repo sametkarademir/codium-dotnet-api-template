@@ -1,0 +1,28 @@
+---
+description: Logging, middlewares, and host configuration rules for Codium.Template
+globs: src/Codium.Template.HttpApi.Host/**/*.cs
+alwaysApply: false
+---
+
+# Logging, Middlewares, and Host Rules
+
+- **Project responsibility**
+  - Keep host-level concerns in `Codium.Template.HttpApi.Host`: program bootstrap, DI setup, middlewares, logging configuration.
+  - Do not put business logic into middlewares or logging components.
+
+- **Middlewares**
+  - Place middlewares in `Middlewares/` under the host project.
+  - Follow existing patterns (`HttpRequestMiddleware`, `ProgressingStartedMiddleware`) when adding new middlewares.
+  - Middlewares should:
+    - Be registered in the host startup pipeline.
+    - Use `ILogger<T>` for logging.
+    - Avoid direct data access; delegate to application services when needed.
+
+- **Logging**
+  - Use structured logging with `ILogger<T>`; avoid `Console.WriteLine`.
+  - Use enrichers like `HttpContextEnricher` for request-scoped metadata (correlation IDs, user info, etc.).
+
+- **Configuration**
+  - Keep environment-specific settings in `appsettings*.json` and bind configuration sections via options patterns where appropriate.
+  - Do not hard-code secrets or environment-specific values in code.
+

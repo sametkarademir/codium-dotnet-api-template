@@ -1,0 +1,25 @@
+---
+description: DTO and FluentValidation rules for Codium.Template
+globs: src/Codium.Template.Application.Contracts/**/*.cs
+alwaysApply: false
+---
+
+# DTO and Validation Rules
+
+- **DTO structure**
+  - Place DTOs under `*.Application.Contracts/{EntityName}/`.
+  - Use naming:
+    - `{Entity}ResponseDto` for response models.
+    - `Create{Entity}RequestDto`, `Update{Entity}RequestDto`, `GetList{Entity}RequestDto`, etc. for requests.
+  - When applicable, inherit from base DTOs such as `EntityDto<Guid>` or audited variants.
+
+- **FluentValidation**
+  - Implement validators as `{DtoName}Validator : AbstractValidator<{DtoName}>`.
+  - Place validators in the same file or namespace as the DTO.
+  - Use localized messages with `IStringLocalizer<ApplicationResource>` and keys like `"Create{Entity}RequestDto:Property:Rule"`.
+
+- **Common rules**
+  - Use `{Entity}Consts` for max lengths and other invariants.
+  - Ensure required fields use `.NotEmpty()` or `.NotNull()` with localized messages.
+  - Validation should focus on request shape and basic invariants; complex business rules belong in application services with proper exceptions.
+

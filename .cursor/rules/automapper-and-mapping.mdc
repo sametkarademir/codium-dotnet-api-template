@@ -1,0 +1,27 @@
+---
+description: AutoMapper and mapping rules for Codium.Template application layer
+globs: src/Codium.Template.Application/ApplicationAutoMapperProfiles.cs
+alwaysApply: false
+---
+
+# AutoMapper and Mapping Rules
+
+- **Profiles location**
+  - Define all mappings in `ApplicationAutoMapperProfiles` (and additional profiles in the same project if needed).
+  - Keep mappings in the Application layer; do not introduce mapping logic in controllers or repositories.
+
+- **Entity–DTO mappings**
+  - Create maps between domain entities and DTOs:
+    - `CreateMap<{Entity}, {Entity}ResponseDto>();`
+    - `CreateMap<Create{Entity}RequestDto, {Entity}>();`
+    - `CreateMap<Update{Entity}RequestDto, {Entity}>();`
+  - Reuse existing patterns from the `User`, `Role`, `Session`, and `Permission` modules as templates.
+
+- **Flattening and nested types**
+  - For nested collections (e.g. user roles), prefer configuring member mappings explicitly rather than manual projection in services.
+  - Keep mapping expressions simple; push complex business rules into services, not mapping configuration.
+
+- **Usage in services**
+  - Use `_mapper.Map<TDestination>(source)` in application services to convert between entities and DTOs.
+  - Avoid hand-written property copying unless there is a strong reason; mapping rules should be centralized.
+

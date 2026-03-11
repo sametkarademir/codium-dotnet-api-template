@@ -1,0 +1,43 @@
+---
+description: Controller and HTTP API rules for Codium.Template
+globs: src/Codium.Template.HttpApi/Controllers/v1/**/*.cs
+alwaysApply: false
+---
+
+# Controller and HTTP API Rules
+
+- **Location and naming**
+  - Place controllers under `Codium.Template.HttpApi/Controllers/v1/`.
+  - Name controllers `{Entity}Controller` (e.g. `UserController`, `RoleController`).
+  - Use attributes:
+    - `[ApiController]`
+    - `[Route("api/v1/{entity-name}")]` with kebab-case entity name in the route.
+    - `[Authorize]`
+    - `[EnableRateLimiting("api")]`
+
+- **Dependencies**
+  - Inject the corresponding application service (`I{Entity}AppService`) via constructor and store in a private readonly field.
+
+- **DTOs and responses**
+  - Controllers must use DTOs only; never return domain entities directly.
+  - Annotate responses with `[ProducesResponseType(typeof(ResponseDto), StatusCodes.StatusXXX)]`.
+
+- **HTTP verbs and status codes**
+  - Use:
+    - `GET` for reads (single and list).
+    - `POST` for creates and operations that conceptually create resources.
+    - `PUT` for full updates.
+    - `PATCH` for partial updates / toggles.
+    - `DELETE` for deletes.
+  - Return:
+    - `200 OK` when returning a body.
+    - `204 NoContent` for successful operations that do not return a body (e.g. delete, some updates).
+
+- **Permissions and binding**
+  - Apply `[PermissionAuthorize(PermissionConsts.{Entity}.{Action})]` to every endpoint.
+  - Use binding attributes explicitly: `[FromRoute]`, `[FromQuery]`, `[FromBody]`.
+
+- **Async and cancellation**
+  - All action methods must be async and accept `CancellationToken cancellationToken = default`.
+  - Pass the cancellation token to underlying application service calls.
+

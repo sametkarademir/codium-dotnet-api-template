@@ -1,0 +1,31 @@
+---
+description: Permission and authorization rules for Codium.Template
+globs: src/**/Permissions/**/*.cs
+alwaysApply: false
+---
+
+# Permissions and Authorization
+
+- **Permission definitions**
+  - Define all permissions in `PermissionConsts` under the shared domain.
+  - Use `{Entity}.{Action}` naming (e.g. `User.GetById`, `User.Create`, `Role.Update`, `Session.Terminate`).
+  - Group permissions by nested static classes (e.g. `PermissionConsts.User`, `PermissionConsts.Role`) for clarity.
+
+- **Controller enforcement**
+  - Apply permissions to controller actions with `[PermissionAuthorize(PermissionConsts.{Entity}.{Action})]`.
+  - Every mutating or sensitive read endpoint should have an explicit permission.
+  - Keep the controller attribute, permission constant, and action name aligned for readability.
+
+- **Designing permission sets for new modules**
+  - For a typical CRUD module, start with:
+    - `{Entity}.GetById`
+    - `{Entity}.GetList`
+    - `{Entity}.Create`
+    - `{Entity}.Update`
+    - `{Entity}.Delete`
+  - Add additional permissions for special operations (e.g. `{Entity}.Activate`, `{Entity}.Deactivate`, `{Entity}.SyncRelations`) instead of reusing generic permissions.
+
+- **Consistency and refactoring**
+  - Avoid hard-coded permission strings outside `PermissionConsts`.
+  - When renaming entities or actions, update both `PermissionConsts` and controller attributes to keep them in sync.
+

@@ -1,0 +1,34 @@
+---
+description: Localization and exception handling rules for Codium.Template
+globs: src/Codium.Template.Application/**/*.cs
+alwaysApply: false
+---
+
+# Localization and Exceptions
+
+- **Localization usage**
+  - Use `IStringLocalizer<ApplicationResource>` in DTO validators.
+  - Use `IStringLocalizer<{ServiceName}>` in application services for exception messages and user-facing strings.
+  - Follow a consistent key pattern: `{ClassName}:{MethodName}:{Key}` (e.g. `UserAppService:CreateAsync:EmailAlreadyExists`).
+
+- **Exception types**
+  - Prefer project-specific exception types:
+    - `AppValidationException` for validation failures.
+    - `AppEntityNotFoundException` when entities are not found.
+    - `AppConflictException` for conflicts and uniqueness violations.
+    - `AppBusinessException` for business rule violations.
+    - `AppForbiddenException` for authorization failures.
+    - `AppUnauthorizedException` for authentication failures.
+  - Avoid throwing generic `Exception` for domain/application-level errors.
+
+- **Patterns in application services**
+  - Wrap user-facing error conditions in localized messages, e.g.:
+    - `throw new AppConflictException(_localizer["UserAppService:CreateAsync:EmailAlreadyExists"]);`
+  - Keep exception messages concise and specific; avoid leaking internal details.
+
+- **FluentValidation messages**
+  - Use localized error messages with keys that identify DTO, property, and rule:
+    - `"CreateUserRequestDto:Email:IsRequired"`
+    - `"CreateUserRequestDto:Email:MaxLength"`
+  - Use `{Entity}Consts` values (e.g. max lengths) in messages where appropriate.
+

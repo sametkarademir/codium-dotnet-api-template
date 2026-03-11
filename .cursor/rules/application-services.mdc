@@ -1,0 +1,45 @@
+---
+description: Rules for application services and business logic in Codium.Template
+globs: src/Codium.Template.Application/**/*.cs
+alwaysApply: false
+---
+
+# Application Service Rules
+
+- **Responsibilities**
+  - Contain application-level business logic and orchestration.
+  - Coordinate repositories, unit of work, AutoMapper, background jobs, and domain services.
+  - Do not access `ApplicationDbContext` directly; always use repositories.
+
+- **Service naming and location**
+  - Define service interfaces in `*.Application.Contracts/{EntityName}/I{Entity}AppService.cs`.
+  - Implement services in `*.Application/{EntityName}/{Entity}AppService.cs`.
+
+- **Constructor dependencies**
+  - Inject dependencies via constructor only.
+  - Use private readonly fields with underscore prefix (e.g. `_userRepository`, `_unitOfWork`, `_mapper`, `_currentUser`, `_localizer`).
+
+- **Async and cancellation**
+  - All public methods should be async and include `CancellationToken cancellationToken = default`.
+  - Use `await` for all async calls and pass the cancellation token through to repositories and background jobs.
+
+- **Exception handling and validation**
+  - Throw project-specific exceptions (`AppValidationException`, `AppEntityNotFoundException`, `AppConflictException`, `AppBusinessException`, etc.) instead of generic exceptions.
+  - Always use localized messages: `_localizer["ClassName:MethodName:Key"]`.
+  - Rely on FluentValidation for DTO validation rather than manual argument checks where possible.
+
+- **Query and pagination patterns**
+  - Use `AsQueryable()` from repositories and apply:
+    - `WhereIf(...)` for conditional filtering.
+    - `AsNoTracking()` for read-only queries.
+    - `ApplySort(request.GetSortRequest(defaultField))` for sorting.
+    - `ToPageableAsync(request.Page, request.PerPage, cancellationToken)` for pagination.
+
+- **Create/update/delete patterns**
+  - Follow the existing create/update/delete patterns:
+    - Check existence with `ExistsAsync` when enforcing uniqueness.
+    - Fetch entities with tracking enabled for updates.
+    - Call repository `AddAsync` / `UpdateAsync` / `DeleteAsync`.
+    - Call `_unitOfWork.SaveChangesAsync(cancellationToken)` once per logical operation.
+  - Map entities to DTOs using AutoMapper before returning results.
+

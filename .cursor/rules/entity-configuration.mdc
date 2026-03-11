@@ -1,0 +1,35 @@
+---
+description: Rules for Entity Framework Core entity configurations in Codium.Template
+globs: src/Codium.Template.EntityFrameworkCore/EntityConfigurations/**/*.cs
+alwaysApply: false
+---
+
+# Entity Configuration Rules
+
+- **Location and naming**
+  - Place configurations in `EntityConfigurations/` within `Codium.Template.EntityFrameworkCore`.
+  - Name each configuration `{Entity}Configuration` and implement `IEntityTypeConfiguration<{Entity}>`.
+
+- **Global configuration and table naming**
+  - Always call `builder.ApplyGlobalEntityConfigurations();` at the start of `Configure`.
+  - Map to tables using:
+    - `builder.ToTable(ApplicationConsts.DbTablePrefix + "{Entities}", ApplicationConsts.DbSchema);`
+    - Follow the existing pluralization pattern (e.g. `"Users"`, `"Roles"`, `"Sessions"`).
+
+- **Property configuration**
+  - Use `{Entity}Consts` from `Domain.Shared` for string max lengths and defaults.
+  - Mark required properties with `.IsRequired();`, optional ones with `.IsRequired(false);`.
+  - Configure sensible defaults for booleans and counters (see `UserConfiguration` as a template).
+
+- **Indexes and uniqueness**
+  - Create indexes for normalized identifiers (email, name, etc.) and enforce uniqueness where required.
+  - When using soft delete, add filters similar to the existing `"IsDeleted" = FALSE` pattern.
+
+- **Relationships**
+  - Configure relationships explicitly using `HasOne`/`WithMany`/`HasForeignKey`.
+  - Set appropriate delete behavior (`DeleteBehavior.Cascade` or `Restrict`) to match domain invariants.
+
+- **Readability and consistency**
+  - Group configuration sections logically: table, indexes, scalar properties, relationships.
+  - Use the existing `UserConfiguration`, `RoleConfiguration`, and `SessionConfiguration` as reference examples.
+

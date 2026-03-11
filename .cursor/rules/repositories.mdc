@@ -1,0 +1,30 @@
+---
+description: Repository interface and implementation rules for Codium.Template
+globs: src/**/Domain/Repositories/**/*.cs
+alwaysApply: false
+---
+
+# Repository Rules
+
+- **Interfaces vs implementations**
+  - Define repository interfaces in the `*.Domain/Repositories/` folder as `I{Entity}Repository : IRepository<{Entity}, Guid>`.
+  - Implement repositories in `*.EntityFrameworkCore/Repositories/` as `{Entity}Repository : EfRepositoryBase<{Entity}, Guid>, I{Entity}Repository`.
+  - Repositories should be thin data-access abstractions; put business rules into application services, not repositories.
+
+- **Async APIs and cancellation**
+  - Use async methods exclusively (e.g. `Task<TEntity?> GetAsync(...)`).
+  - Include `CancellationToken cancellationToken = default` in all public methods.
+  - Expose high-level operations like `GetAsync`, `GetAllAsync`, `ExistsAsync`, `AddAsync`, `UpdateAsync`, `DeleteAsync`, plus any domain-specific queries.
+
+- **Query patterns**
+  - For complex querying, prefer returning `IQueryable<TEntity>` from `AsQueryable()` and apply filters in the application service.
+  - Do not materialize queries prematurely inside the repository if the service needs to compose additional filters or includes.
+
+- **Tracking rules**
+  - Use `enableTracking: false` for read-only operations to optimize performance.
+  - Use `enableTracking: true` only when entities will be updated within the same unit of work.
+
+- **Unit of Work**
+  - Repositories should not call `SaveChangesAsync()` directly.
+  - Application services coordinate persistence via `IUnitOfWork.SaveChangesAsync(cancellationToken)`.
+
